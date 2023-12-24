@@ -11,25 +11,21 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.pengrad.telegrambot.TelegramBot;
-import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
-import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
-import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.model.Update;
 
 import butvinm.mercury.bot.models.PipelineEvent;
 import butvinm.mercury.bot.models.PipelineStatus;
 
 @SpringBootApplication
 @RestController
-public class BotApplication {
+public class Application {
     private final Logger logger = initLogger();
 
-    private final TelegramBot bot = initBot(System.getenv("BOT_TOKEN"));
-
-    private final String chatId = System.getenv("CHAT_ID");
+    private final Bot bot = initBot(System.getenv("BOT_TOKEN"),
+        System.getenv("CHAT_ID"));
 
     public static void main(String[] args) {
-        SpringApplication.run(BotApplication.class, args);
+        SpringApplication.run(Application.class, args);
     }
 
     @PostMapping("/pipelines")
@@ -44,27 +40,29 @@ public class BotApplication {
         return "none";
     }
 
+    @PostMapping("/bot")
+    public String botWebhook(Update update) {
+        var response = this.bot.handleUpdate(update);
+        if (response.isPresent()) {
+            return response.toString();
+        }
+        return null;
+    }
+
     private String handleSuccessPipeline(PipelineEvent event) {
         var projectId = event.getProject().getId();
         var pipelineId = event.getObjectAttributes().getId();
         var pipelineName = event.getObjectAttributes().getName();
         var pipelineTime = event.getObjectAttributes().getFinishedAt();
-        var callbackData = "rebuild:%s:%s".formatted(projectId, pipelineId);
-        var text = "Pipeline \"%s\" finished successfully at %s"
+        var report = "Pipeline \"%s\" finished successfully at %s"
             .formatted(pipelineName, pipelineTime);
 
-        var keyboard = new InlineKeyboardMarkup(
-            new InlineKeyboardButton("Rebuild!").callbackData(callbackData)
-        );
-        SendMessage request = new SendMessage(chatId, text)
-            .replyMarkup(keyboard);
-
-        var response = bot.execute(request);
-        return response.toString();
+        return this.bot.sendBuildReport(report, projectId, pipelineId)
+            .toString();
     }
 
-    private TelegramBot initBot(String token) {
-        return new TelegramBot(token);
+    private Bot initBot(String token, String chatId) {
+        return new Bot(token, chatId);
     }
 
     private Logger initLogger() {
