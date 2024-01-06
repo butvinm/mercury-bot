@@ -7,7 +7,7 @@ SERVER_USER ?=
 SERVER_IP ?=
 SERVER_SSH = "$(SERVER_USER)@$(SERVER_IP)"
 
-BIND_PORT = 6969
+BIND_PORT = 80
 
 all: dev
 
@@ -16,12 +16,12 @@ $(JAR): $(SOURCES)
 
 deploy: $(JAR)
 	scp $(JAR) $(SERVER_SSH):~/target
-	scp Dockerfile-bot $(SERVER_SSH):~
+	scp Dockerfile $(SERVER_SSH):~/Dockerfile-bot
 	scp .env $(SERVER_SSH):~
 	ssh $(SERVER_SSH) "docker ps -a -q | xargs -r docker stop || true"
 	ssh $(SERVER_SSH) "docker ps -a -q | xargs -r docker kill || true"
 	ssh $(SERVER_SSH) "docker ps -a -q | xargs -r docker rm || true"
-	ssh $(SERVER_SSH) "docker build -t bot Dockerfile-bot"
+	ssh $(SERVER_SSH) "docker build -t bot -f Dockerfile-bot ."
 	ssh $(SERVER_SSH) "docker run --env-file .env -v ./cnt-tmp:/tmp/logs -d -p $(BIND_PORT):8080 bot"
 
 dev: $(JAR)
