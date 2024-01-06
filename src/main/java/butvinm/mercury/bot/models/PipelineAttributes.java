@@ -11,7 +11,7 @@ import lombok.extern.jackson.Jacksonized;
 @Data
 @Jacksonized
 @Builder
-public class ObjectAttributes {
+public class PipelineAttributes {
     @JsonProperty("id")
     private final int id;
 
@@ -38,4 +38,7 @@ public class ObjectAttributes {
 
     @JsonProperty("finished_at")
     private final String finishedAt;
+
+    @JsonProperty("duration")
+    private final Float duration;
 }

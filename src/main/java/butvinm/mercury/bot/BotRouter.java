@@ -1,5 +1,6 @@
 package butvinm.mercury.bot;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 import com.pengrad.telegrambot.TelegramBot;
@@ -25,49 +26,62 @@ public class BotRouter {
     private final Logger logger;
 
     public SendResponse handleUpdate(Update update) {
-        // if (update.callbackQuery() != null) {
-        // var rebuildCallback = RebuildCallback
-        // .unpack(update.callbackQuery().data();
-        // if (rebuildCallback.isPresent()) {
-        // return rebuildPipeline(rebuildCallback.get());
-        // }
-        // }
+        if (update.callbackQuery() != null) {
+            var rebuildCallback = RebuildCallback
+                .unpack(update.callbackQuery().data());
+            if (rebuildCallback.isPresent()) {
+                logger.info("Handle rebuild %s".formatted(rebuildCallback));
+            }
+        }
         return null;
     }
 
     public SendResponse handlePipelineEvent(PipelineEvent event) {
-        var buildJob = event.getJobs().stream()
-            .filter(j -> j.getStage().equals("build"))
-            .filter(j -> j.getStatus() == Status.SUCCESS
-                || j.getStatus() == Status.FAILED)
-            .findFirst();
-
-        if (buildJob.isPresent()) {
-            return sendBuildDigest(event, buildJob.get());
+        List<Job> buildJobs = event.getJobs().stream().toList();
+        var buildFinished = buildJobs.stream()
+            .allMatch(j -> Status.isFinished(j.getStatus()));
+        if (buildFinished) {
+            return sendBuildDigest(event, buildJobs);
         }
         return null;
     }
 
     // POST /projects/:id/jobs/:job_id/retry
 
-    private SendResponse sendBuildDigest(PipelineEvent event, Job build) {
-        var report = "" +
-            "Build <code>%d</code> finished.\n\n".formatted(build.getId()) +
-            "<b>Status</b>: %s\n".formatted(build.getStatus().getLabel()) +
-            "<b>Finished at</b>: %s\n".formatted(build.getFinishedAt()) +
-            "<b>Duration</b>: %s s\n".formatted(build.getDuration()) +
-            "<b>Create by</b>: %s\n".formatted(build.getUser().getName());
+    private String createBuildDigest(
+        PipelineEvent event,
+        List<Job> buildJobs
+    ) {
+        var attrs = event.getAttributes();
+        var digest = "" +
+            "Pipeline <code>%d</code> finished.\n\n".formatted(attrs.getId()) +
+            "<b>Finished at</b>: %s\n".formatted(attrs.getFinishedAt()) +
+            "<b>Duration</b>: %s s\n".formatted(attrs.getDuration()) +
+            "<b>Created by</b>: %s\n\n".formatted(event.getUser().getName()) +
+            "<b>Jobs</b>:\n";
 
-        logger.info(report);
+        for (var job : buildJobs) {
+            digest += "<b>%s:</b> %s\n".formatted(
+                job.getName(),
+                job.getStatus().getLabel()
+            );
+        }
+        return digest;
+    }
 
+    private SendResponse sendBuildDigest(
+        PipelineEvent event,
+        List<Job> buildJobs
+    ) {
+        var digest = createBuildDigest(event, buildJobs);
         var callback = new RebuildCallback(
             event.getProject().getId(),
-            build.getId()
+            buildJobs.stream().map(j -> j.getId()).toList()
         );
         var keyboard = new InlineKeyboardMarkup(
             new InlineKeyboardButton("Rebuild!").callbackData(callback.pack())
         );
-        var request = new SendMessage(targetChatId, report)
+        var request = new SendMessage(targetChatId, digest)
             .parseMode(ParseMode.HTML)
             .replyMarkup(keyboard);
 

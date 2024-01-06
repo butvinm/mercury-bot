@@ -18,4 +18,8 @@ public enum Status {
     private Status(String label) {
         this.label = label;
     }
+
+    public static Boolean isFinished(Status status) {
+        return status == SUCCESS || status == FAILED || status == SKIPPED;
+    }
 }

@@ -25,10 +25,10 @@ public class PipelineEvent {
     private final Project project;
 
     @JsonProperty("object_attributes")
-    private final ObjectAttributes attributes;
+    private final PipelineAttributes attributes;
 
     @JsonProperty("merge_request")
-    private final ObjectAttributes mergeRequest;
+    private final PipelineAttributes mergeRequest;
 
     @JsonProperty("builds")
     private final List<Job> jobs;
