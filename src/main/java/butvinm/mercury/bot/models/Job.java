@@ -11,7 +11,7 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 public class Job {
     @JsonProperty("id")
-    private final Integer id;
+    private final Long id;
 
     @JsonProperty("stage")
     private final String stage;

@@ -11,7 +11,7 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 public class Project {
     @JsonProperty("id")
-    private final int id;
+    private final Long id;
 
     @JsonProperty("name")
     private final String name;
@@ -33,9 +33,6 @@ public class Project {
 
     @JsonProperty("namespace")
     private final String namespace;
-
-    @JsonProperty("visibility_level")
-    private final int visibilityLevel;
 
     @JsonProperty("path_with_namespace")
     private final String pathWithNamespace;

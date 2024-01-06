@@ -11,7 +11,7 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 public class User {
     @JsonProperty("id")
-    private final int id;
+    private final Long id;
 
     @JsonProperty("name")
     private final String name;

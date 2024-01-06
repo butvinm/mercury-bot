@@ -11,10 +11,10 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 public class MergeRequest {
     @JsonProperty("id")
-    private final int id;
+    private final Long id;
 
     @JsonProperty("iid")
-    private final int iid;
+    private final Long iid;
 
     @JsonProperty("title")
     private final String title;
@@ -23,13 +23,13 @@ public class MergeRequest {
     private final String targetBranch;
 
     @JsonProperty("target_project_id")
-    private final int targetProjectId;
+    private final Long targetProjectId;
 
     @JsonProperty("source_branch")
     private final String sourceBranch;
 
     @JsonProperty("source_project_id")
-    private final int sourceProjectId;
+    private final Long sourceProjectId;
 
     @JsonProperty("state")
     private final MergeRequestState state;

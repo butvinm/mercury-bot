@@ -13,10 +13,10 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 public class PipelineAttributes {
     @JsonProperty("id")
-    private final int id;
+    private final Long id;
 
     @JsonProperty("iid")
-    private final int iid;
+    private final Long iid;
 
     @JsonProperty("name")
     private final String name;

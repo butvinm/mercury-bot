@@ -6,10 +6,12 @@ import lombok.Getter;
 
 public enum Status {
     CREATED("created"),
+    PENDING("pending"),
     RUNNING("running"),
     SUCCESS("success"),
     FAILED("failed"),
-    SKIPPED("skipped");
+    SKIPPED("skipped"),
+    CANCELED("canceled");
 
     @Getter
     @JsonValue
@@ -20,6 +22,6 @@ public enum Status {
     }
 
     public static Boolean isFinished(Status status) {
-        return status == SUCCESS || status == FAILED || status == SKIPPED;
+        return status == SUCCESS || status == FAILED || status == SKIPPED || status == CANCELED;
     }
 }
