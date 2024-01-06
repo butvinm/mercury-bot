@@ -11,58 +11,46 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.gson.Gson;
+import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.response.SendResponse;
 
 import butvinm.mercury.bot.models.PipelineEvent;
-import butvinm.mercury.bot.models.PipelineStatus;
 
 @SpringBootApplication
 @RestController
 public class Application {
     private final Logger logger = initLogger();
 
-    private final Bot bot = initBot(System.getenv("BOT_TOKEN"),
-        System.getenv("CHAT_ID"));
+    private final BotRouter router = initBotRouter(
+        System.getenv("BOT_TOKEN"),
+        System.getenv("CHAT_ID"),
+        logger
+    );
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
 
     @PostMapping("/pipelines")
-    public String mergeRequestHandler(
-        @RequestBody PipelineEvent event
-    ) {
-        logger.info(event.toString());
-        var eventStatus = event.getObjectAttributes().getStatus();
-        if (eventStatus.equals(PipelineStatus.SUCCESS)) {
-            return handleSuccessPipeline(event);
-        }
-        return "none";
+    public SendResponse pipelineHandler(@RequestBody PipelineEvent event) {
+        return router.handlePipelineEvent(event);
     }
 
     @PostMapping("/bot")
-    public String botWebhook(Update update) {
-        var response = this.bot.handleUpdate(update);
-        if (response.isPresent()) {
-            return response.toString();
-        }
-        return null;
+    @JsonDeserialize()
+    public SendResponse botWebhook(@RequestBody String updateString) {
+        // Two wide-spread JSON serialization libraries, what could went wrong...?
+        // I don't wanna configure Spring to use Gson for that specific handler,
+        // so just manually call Gson for telegrambot.Update
+        var update = new Gson().fromJson(updateString, Update.class);
+        return router.handleUpdate(update);
     }
 
-    private String handleSuccessPipeline(PipelineEvent event) {
-        var projectId = event.getProject().getId();
-        var pipelineId = event.getObjectAttributes().getId();
-        var pipelineName = event.getObjectAttributes().getName();
-        var pipelineTime = event.getObjectAttributes().getFinishedAt();
-        var report = "Pipeline \"%s\" finished successfully at %s"
-            .formatted(pipelineName, pipelineTime);
-
-        return this.bot.sendBuildReport(report, projectId, pipelineId)
-            .toString();
-    }
-
-    private Bot initBot(String token, String chatId) {
-        return new Bot(token, chatId);
+    private BotRouter initBotRouter(String botToken, String chatId, Logger logger) {
+        return new BotRouter(new TelegramBot(botToken), chatId, logger);
     }
 
     private Logger initLogger() {

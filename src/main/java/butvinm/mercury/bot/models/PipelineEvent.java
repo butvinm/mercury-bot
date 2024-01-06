@@ -1,5 +1,7 @@
 package butvinm.mercury.bot.models;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Builder;
@@ -23,8 +25,11 @@ public class PipelineEvent {
     private final Project project;
 
     @JsonProperty("object_attributes")
-    private final ObjectAttributes objectAttributes;
+    private final ObjectAttributes attributes;
 
     @JsonProperty("merge_request")
     private final ObjectAttributes mergeRequest;
+
+    @JsonProperty("builds")
+    private final List<Job> jobs;
 }

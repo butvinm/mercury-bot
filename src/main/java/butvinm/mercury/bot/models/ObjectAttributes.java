@@ -28,7 +28,7 @@ public class ObjectAttributes {
     private final String source;
 
     @JsonProperty("status")
-    private final PipelineStatus status;
+    private final Status status;
 
     @JsonProperty("stages")
     private final List<String> stages;
