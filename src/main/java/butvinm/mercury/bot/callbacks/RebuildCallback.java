@@ -11,8 +11,8 @@ public class RebuildCallback {
     private static final String fieldsSep = ":";
     private static final String listSep = ",";
 
-    private final Integer projectId;
-    private final List<Integer> jobIds;
+    private final Long projectId;
+    private final List<Long> jobIds;
 
     public String pack() {
         var packedJobIds = String.join(
@@ -36,9 +36,9 @@ public class RebuildCallback {
             );
         }
 
-        var projectId = Integer.valueOf(parts[1]);
+        var projectId = Long.valueOf(parts[1]);
         var jobIds = List.of(parts[2].split(listSep)).stream()
-            .map(Integer::valueOf).toList();
+            .map(Long::valueOf).toList();
         return Optional.of(new RebuildCallback(projectId, jobIds));
     }
 }

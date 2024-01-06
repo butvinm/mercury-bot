@@ -15,6 +15,7 @@ import butvinm.mercury.bot.callbacks.RebuildCallback;
 import butvinm.mercury.bot.models.Job;
 import butvinm.mercury.bot.models.PipelineEvent;
 import butvinm.mercury.bot.models.Status;
+import kong.unirest.UnirestException;
 import lombok.Data;
 
 @Data
@@ -23,6 +24,8 @@ public class BotRouter {
 
     private final String targetChatId;
 
+    private final GitLabClient gitlabClient;
+
     private final Logger logger;
 
     public SendResponse handleUpdate(Update update) {
@@ -30,14 +33,15 @@ public class BotRouter {
             var rebuildCallback = RebuildCallback
                 .unpack(update.callbackQuery().data());
             if (rebuildCallback.isPresent()) {
-                logger.info("Handle rebuild %s".formatted(rebuildCallback));
+                return retryBuildJobs(rebuildCallback.get());
             }
         }
         return null;
     }
 
     public SendResponse handlePipelineEvent(PipelineEvent event) {
-        List<Job> buildJobs = event.getJobs().stream().toList();
+        List<Job> buildJobs = event.getJobs().stream()
+            .filter(j -> j.getStage().equals("build")).toList();
         var buildFinished = buildJobs.stream()
             .allMatch(j -> Status.isFinished(j.getStatus()));
         if (buildFinished) {
@@ -46,8 +50,33 @@ public class BotRouter {
         return null;
     }
 
-    // POST /projects/:id/jobs/:job_id/retry
+    private SendResponse retryBuildJobs(RebuildCallback callback) {
+        var report = "Retry jobs:\n";
+        for (var jobId : callback.getJobIds()) {
+            try {
+                var response = gitlabClient.retryJob(
+                    callback.getProjectId(), jobId
+                );
+                logger.info(response.getBody().toPrettyString());
+                report += "<b>%s:</b> %s\n".formatted(
+                    jobId,
+                    response.isSuccess() ? "OK" : "FAIL"
+                );
+            } catch (UnirestException err) {
+                report += "<b>%s:</b> %s\n".formatted(
+                    jobId,
+                    err.toString()
+                );
+                break;
+            }
+        }
+        var request = new SendMessage(targetChatId, report)
+            .parseMode(ParseMode.HTML);
 
+        return bot.execute(request);
+    }
+
+    // TODO: add link to the pipeline
     private String createBuildDigest(
         PipelineEvent event,
         List<Job> buildJobs
