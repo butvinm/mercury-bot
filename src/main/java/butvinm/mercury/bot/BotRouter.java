@@ -1,10 +1,14 @@
 package butvinm.mercury.bot;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.model.CallbackQuery;
+import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
@@ -27,17 +31,26 @@ public class BotRouter {
 
     private final GitLabClient gitlabClient;
 
+    private final Redis<Long, List<String>> pipelinesMessagesStore;
+
+    private final Mongo<BotUser> usersStore;
+
     private final Logger logger;
 
-    private final Redis<Long, List<String>> pipelinesMessages = new Redis<>();
-
-    public SendResponse handleUpdate(Update update) {
-        if (update.callbackQuery() != null) {
-            var rebuildCallback = RebuildCallback
-                .unpack(update.callbackQuery().data());
+    public Object handleUpdate(Update update) {
+        var callbackQuery = update.callbackQuery();
+        if (callbackQuery != null) {
+            var rebuildCallback = RebuildCallback.unpack(callbackQuery.data());
             if (rebuildCallback.isPresent()) {
-                return retryBuildJobs(rebuildCallback.get());
+                return handleRebuildCallback(
+                    callbackQuery,
+                    rebuildCallback.get()
+                );
             }
+        }
+        var message = update.message();
+        if (message != null) {
+            return handleMessage(message);
         }
         return null;
     }
@@ -54,8 +67,43 @@ public class BotRouter {
     }
 
     public void handlePipelineMessage(Long pipelineId, String message) {
-        pipelinesMessages.putIfAbsent(pipelineId, new ArrayList<>());
-        pipelinesMessages.get(pipelineId).add(message);
+        pipelinesMessagesStore.putIfAbsent(pipelineId, new ArrayList<>());
+        pipelinesMessagesStore.get(pipelineId).add(message);
+    }
+
+    private BotUser handleMessage(Message message) {
+        try {
+            var user = new BotUser(
+                message.from().id(),
+                message.from().username(),
+                false
+            );
+            if (usersStore.get(user.getId().toString()).isPresent()) {
+                return null;
+            }
+            return usersStore.put(user.getId().toString(), user);
+        } catch (IOException err) {
+            logger.warning(err.toString());
+            logger.warning(err.getMessage());
+            return null;
+        }
+    }
+
+    private SendResponse handleRebuildCallback(
+        CallbackQuery query,
+        RebuildCallback callback
+    ) {
+        try {
+            var userId = query.from().id();
+            var user = usersStore.get(userId.toString());
+            if (user.isPresent() && user.get().getAdmin()) {
+                return retryBuildJobs(callback);
+            }
+            return sendPermissionsAlert();
+        } catch (IOException err) {
+            logger.warning(err.getMessage());
+            return sendError(err);
+        }
     }
 
     private SendResponse retryBuildJobs(RebuildCallback callback) {
@@ -84,6 +132,22 @@ public class BotRouter {
         return bot.execute(request);
     }
 
+    private SendResponse sendPermissionsAlert() {
+        var request = new SendMessage(
+            targetChatId,
+            "You are not permitted to run this action."
+        );
+        return bot.execute(request);
+    }
+
+    private SendResponse sendError(Exception error) {
+        var request = new SendMessage(
+            targetChatId,
+            "Something went wrong: %s".formatted(error.getMessage())
+        );
+        return bot.execute(request);
+    }
+
     // TODO: add link to the pipeline
     private String createBuildDigest(
         PipelineEvent event,
@@ -104,8 +168,9 @@ public class BotRouter {
             );
         }
 
-        logger.info(pipelinesMessages.toString());
-        var messages = pipelinesMessages.remove(event.getAttributes().getId());
+        logger.info(pipelinesMessagesStore.toString());
+        var messages = pipelinesMessagesStore
+            .remove(event.getAttributes().getId());
         if (messages != null) {
             digest += "\n<b>Messages</b>:\n";
             for (var msg : messages) {

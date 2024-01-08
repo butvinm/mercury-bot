@@ -1,6 +1,8 @@
 package butvinm.mercury.bot;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -35,6 +37,7 @@ public class Application {
         System.getenv("BOT_TOKEN"),
         System.getenv("CHAT_ID"),
         glClient,
+        new File("./users.db"),
         logger
     );
 
@@ -59,7 +62,7 @@ public class Application {
 
     @PostMapping("/bot")
     @JsonDeserialize()
-    public SendResponse botWebhook(@RequestBody String updateString) {
+    public Object botWebhook(@RequestBody String updateString) {
         // Two wide-spread JSON serialization libraries,
         // what could went wrong...?
         // I don't wanna configure Spring to use Gson for that specific handler,
@@ -80,10 +83,20 @@ public class Application {
         String botToken,
         String chatId,
         GitLabClient glClient,
+        File usersDb,
         Logger logger
     ) {
-        return new BotRouter(new TelegramBot(botToken), chatId, glClient,
-            logger);
+        var bot = new TelegramBot(botToken);
+        var pipelineMessagesStore = new Redis<Long, List<String>>();
+        var usersStore = new Mongo<BotUser>(usersDb, BotUser.class);
+        return new BotRouter(
+            bot,
+            chatId,
+            glClient,
+            pipelineMessagesStore,
+            usersStore,
+            logger
+        );
     }
 
     private Logger initLogger() {
