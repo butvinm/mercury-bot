@@ -1,5 +1,6 @@
 package butvinm.mercury.bot;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -28,6 +29,8 @@ public class BotRouter {
 
     private final Logger logger;
 
+    private final Redis<Long, List<String>> pipelinesMessages = new Redis<>();
+
     public SendResponse handleUpdate(Update update) {
         if (update.callbackQuery() != null) {
             var rebuildCallback = RebuildCallback
@@ -48,6 +51,11 @@ public class BotRouter {
             return sendBuildDigest(event, buildJobs);
         }
         return null;
+    }
+
+    public void handlePipelineMessage(Long pipelineId, String message) {
+        pipelinesMessages.putIfAbsent(pipelineId, new ArrayList<>());
+        pipelinesMessages.get(pipelineId).add(message);
     }
 
     private SendResponse retryBuildJobs(RebuildCallback callback) {
@@ -94,6 +102,15 @@ public class BotRouter {
                 job.getName(),
                 job.getStatus().getLabel()
             );
+        }
+
+        logger.info(pipelinesMessages.toString());
+        var messages = pipelinesMessages.remove(event.getAttributes().getId());
+        if (messages != null) {
+            digest += "\n<b>Messages</b>:\n";
+            for (var msg : messages) {
+                digest += msg + "\n";
+            }
         }
         return digest;
     }
