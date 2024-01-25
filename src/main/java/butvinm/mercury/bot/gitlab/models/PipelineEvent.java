@@ -1,4 +1,4 @@
-package butvinm.mercury.bot.models;
+package butvinm.mercury.bot.gitlab.models;
 
 import java.util.List;
 

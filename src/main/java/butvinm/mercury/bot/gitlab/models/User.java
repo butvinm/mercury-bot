@@ -1,4 +1,4 @@
-package butvinm.mercury.bot;
+package butvinm.mercury.bot.gitlab.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -9,13 +9,19 @@ import lombok.extern.jackson.Jacksonized;
 @Data
 @Jacksonized
 @Builder
-public class BotUser {
+public class User {
     @JsonProperty("id")
     private final Long id;
+
+    @JsonProperty("name")
+    private final String name;
 
     @JsonProperty("username")
     private final String username;
 
-    @JsonProperty("is_admin")
-    private final Boolean admin;
+    @JsonProperty("avatar_url")
+    private final String avatarUrl;
+
+    @JsonProperty("email")
+    private final String email;
 }

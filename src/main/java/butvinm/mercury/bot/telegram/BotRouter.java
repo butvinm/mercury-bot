@@ -1,9 +1,8 @@
-package butvinm.mercury.bot;
+package butvinm.mercury.bot.telegram;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Logger;
 
 import com.pengrad.telegrambot.TelegramBot;
@@ -16,10 +15,14 @@ import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 
-import butvinm.mercury.bot.callbacks.RebuildCallback;
-import butvinm.mercury.bot.models.Job;
-import butvinm.mercury.bot.models.PipelineEvent;
-import butvinm.mercury.bot.models.Status;
+import butvinm.mercury.bot.gitlab.GitLabClient;
+import butvinm.mercury.bot.gitlab.models.Job;
+import butvinm.mercury.bot.gitlab.models.PipelineEvent;
+import butvinm.mercury.bot.gitlab.models.Status;
+import butvinm.mercury.bot.storage.Mongo;
+import butvinm.mercury.bot.storage.Redis;
+import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
+import butvinm.mercury.bot.telegram.models.BotUser;
 import kong.unirest.UnirestException;
 import lombok.Data;
 
@@ -73,11 +76,11 @@ public class BotRouter {
 
     private BotUser handleMessage(Message message) {
         try {
-            var user = new BotUser(
-                message.from().id(),
-                message.from().username(),
-                false
-            );
+            var user = BotUser.builder()
+                .id(message.from().id())
+                .username(message.from().username())
+                .admin(false)
+                .build();
             if (usersStore.get(user.getId().toString()).isPresent()) {
                 return null;
             }

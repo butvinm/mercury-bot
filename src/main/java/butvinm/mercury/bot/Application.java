@@ -20,7 +20,12 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.response.SendResponse;
 
-import butvinm.mercury.bot.models.PipelineEvent;
+import butvinm.mercury.bot.gitlab.GitLabClient;
+import butvinm.mercury.bot.gitlab.models.PipelineEvent;
+import butvinm.mercury.bot.storage.Mongo;
+import butvinm.mercury.bot.storage.Redis;
+import butvinm.mercury.bot.telegram.BotRouter;
+import butvinm.mercury.bot.telegram.models.BotUser;
 
 @SpringBootApplication
 @RestController

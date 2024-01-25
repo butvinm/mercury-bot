@@ -1,4 +1,4 @@
-package butvinm.mercury.bot;
+package butvinm.mercury.bot.gitlab;
 
 import java.util.logging.Logger;
 
