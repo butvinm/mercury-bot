@@ -1,33 +1,27 @@
 package butvinm.mercury.bot.gitlab;
 
-import java.util.logging.Logger;
-
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 
-public class GitLabClient {
-    private final Logger logger;
-
+public class GLClient {
     private final UnirestInstance unirest;
 
-    public GitLabClient(
-        String gitlabHost,
-        String accessToken,
-        Logger logger
+    public GLClient(
+        String host,
+        String accessToken
     ) {
-        this.logger = logger;
-        this.unirest = initUnirest(gitlabHost, accessToken);
+        this.unirest = initUnirest(host, accessToken);
     }
 
     private UnirestInstance initUnirest(
-        String gitlabHost,
+        String host,
         String accessToken
     ) {
         var unirest = Unirest.spawnInstance();
         unirest.config()
-            .defaultBaseUrl(gitlabHost + "/api/v4")
+            .defaultBaseUrl(host + "/api/v4")
             .addDefaultHeader("PRIVATE-TOKEN", accessToken);
         return unirest;
     }

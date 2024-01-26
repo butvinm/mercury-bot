@@ -3,7 +3,6 @@ package butvinm.mercury.bot.telegram;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.CallbackQuery;
@@ -15,7 +14,7 @@ import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 
-import butvinm.mercury.bot.gitlab.GitLabClient;
+import butvinm.mercury.bot.gitlab.GLClient;
 import butvinm.mercury.bot.gitlab.models.Job;
 import butvinm.mercury.bot.gitlab.models.PipelineEvent;
 import butvinm.mercury.bot.gitlab.models.Status;
@@ -25,20 +24,20 @@ import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
 import butvinm.mercury.bot.telegram.models.BotUser;
 import kong.unirest.UnirestException;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class BotRouter {
     private final TelegramBot bot;
 
     private final String targetChatId;
 
-    private final GitLabClient gitlabClient;
+    private final GLClient glClient;
 
     private final Redis<Long, List<String>> pipelinesMessagesStore;
 
     private final Mongo<BotUser> usersStore;
-
-    private final Logger logger;
 
     public Object handleUpdate(Update update) {
         var callbackQuery = update.callbackQuery();
@@ -61,8 +60,11 @@ public class BotRouter {
     public SendResponse handlePipelineEvent(PipelineEvent event) {
         List<Job> buildJobs = event.getJobs().stream()
             .filter(j -> j.getStage().equals("build")).toList();
+
+        log.info(buildJobs.toString());
         var buildFinished = buildJobs.stream()
             .allMatch(j -> Status.isFinished(j.getStatus()));
+        log.info(Boolean.toString(buildFinished));
         if (buildFinished) {
             return sendBuildDigest(event, buildJobs);
         }
@@ -86,8 +88,6 @@ public class BotRouter {
             }
             return usersStore.put(user.getId().toString(), user);
         } catch (IOException err) {
-            logger.warning(err.toString());
-            logger.warning(err.getMessage());
             return null;
         }
     }
@@ -104,7 +104,6 @@ public class BotRouter {
             }
             return sendPermissionsAlert();
         } catch (IOException err) {
-            logger.warning(err.getMessage());
             return sendError(err);
         }
     }
@@ -113,10 +112,9 @@ public class BotRouter {
         var report = "Retry jobs:\n";
         for (var jobId : callback.getJobIds()) {
             try {
-                var response = gitlabClient.retryJob(
+                var response = glClient.retryJob(
                     callback.getProjectId(), jobId
                 );
-                logger.info(response.getBody().toPrettyString());
                 report += "<b>%s:</b> %s\n".formatted(
                     jobId,
                     response.isSuccess() ? "OK" : "FAIL"
@@ -171,7 +169,6 @@ public class BotRouter {
             );
         }
 
-        logger.info(pipelinesMessagesStore.toString());
         var messages = pipelinesMessagesStore
             .remove(event.getAttributes().getId());
         if (messages != null) {
@@ -199,6 +196,10 @@ public class BotRouter {
             .parseMode(ParseMode.HTML)
             .replyMarkup(keyboard);
 
-        return bot.execute(request);
+        log.info(request.toString());
+        var response = bot.execute(request);
+        log.error("" + response.errorCode());
+        log.error(response.description());
+        return response;
     }
 }

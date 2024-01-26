@@ -37,13 +37,14 @@ public class Mongo<T> {
     }
 
     private Map<String, T> readStore() throws IOException, DatabindException {
+        store.createNewFile();
         try {
             var type = mapper.getTypeFactory()
                 .constructMapType(Map.class, String.class, valueType);
             return mapper.readValue(store, type);
         } catch (MismatchedInputException err) {
             // Would be better to handle precise error when file is just empty,
-            // but it is Java, so just calm down and return empty map event if
+            // but it is Java, so just calm down and return empty map even if
             // its probably syntax error
             return new LinkedHashMap<>();
         }

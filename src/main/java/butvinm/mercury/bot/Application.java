@@ -1,12 +1,10 @@
 package butvinm.mercury.bot;
 
 import java.io.File;
-import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.logging.FileHandler;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +18,8 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.response.SendResponse;
 
-import butvinm.mercury.bot.gitlab.GitLabClient;
+import butvinm.mercury.bot.exceptions.ShareDirMissedException;
+import butvinm.mercury.bot.gitlab.GLClient;
 import butvinm.mercury.bot.gitlab.models.PipelineEvent;
 import butvinm.mercury.bot.storage.Mongo;
 import butvinm.mercury.bot.storage.Redis;
@@ -30,21 +29,34 @@ import butvinm.mercury.bot.telegram.models.BotUser;
 @SpringBootApplication
 @RestController
 public class Application {
-    private final Logger logger = initLogger();
+    private final File shareDir;
 
-    private final GitLabClient glClient = initGitLabClient(
-        System.getenv("GITLAB_HOST"),
-        System.getenv("GITLAB_ACCESS_TOKEN"),
-        logger
-    );
+    private final GLClient glClient;
 
-    private final BotRouter router = initBotRouter(
-        System.getenv("BOT_TOKEN"),
-        System.getenv("CHAT_ID"),
-        glClient,
-        new File("./users.db"),
-        logger
-    );
+    private final BotRouter router;
+
+    public Application(
+        @Value("${share}") Path shareDir,
+        @Value("${users.db}") Path usersDb,
+        @Value("${gitlab.host}") String glHost,
+        @Value("${gitlab.access.token}") String glAccessToken,
+        @Value("${bot.token}") String botToken,
+        @Value("${chat.id}") String chatId
+    ) throws ShareDirMissedException {
+        this.shareDir = shareDir.toFile();
+        if (!this.shareDir.exists()) {
+            throw new ShareDirMissedException(this.shareDir);
+        }
+
+        this.glClient = initGitLabClient(glHost, glAccessToken);
+
+        this.router = initBotRouter(
+            botToken,
+            chatId,
+            glClient,
+            shareDir.resolve(usersDb).toFile()
+        );
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
@@ -52,7 +64,6 @@ public class Application {
 
     @PostMapping("/pipelines")
     public SendResponse pipelineHandler(@RequestBody PipelineEvent event) {
-        logger.info(event.toString());
         return router.handlePipelineEvent(event);
     }
 
@@ -61,7 +72,6 @@ public class Application {
         @PathVariable Long pipelineId,
         @RequestBody String message
     ) {
-        logger.info("Pipeline %s Message: %s".formatted(pipelineId, message));
         router.handlePipelineMessage(pipelineId, message);
     }
 
@@ -76,20 +86,18 @@ public class Application {
         return router.handleUpdate(update);
     }
 
-    private GitLabClient initGitLabClient(
-        String gitlabHost,
-        String accessToken,
-        Logger logger
+    private GLClient initGitLabClient(
+        String host,
+        String accessToken
     ) {
-        return new GitLabClient(gitlabHost, accessToken, logger);
+        return new GLClient(host, accessToken);
     }
 
     private BotRouter initBotRouter(
         String botToken,
         String chatId,
-        GitLabClient glClient,
-        File usersDb,
-        Logger logger
+        GLClient glClient,
+        File usersDb
     ) {
         var bot = new TelegramBot(botToken);
         var pipelineMessagesStore = new Redis<Long, List<String>>();
@@ -99,21 +107,7 @@ public class Application {
             chatId,
             glClient,
             pipelineMessagesStore,
-            usersStore,
-            logger
+            usersStore
         );
-    }
-
-    private Logger initLogger() {
-        var logger = Logger.getLogger("main");
-        try {
-            var fileHandler = new FileHandler("/tmp/logs/logs.log");
-            logger.addHandler(fileHandler);
-            var formatter = new SimpleFormatter();
-            fileHandler.setFormatter(formatter);
-            return logger;
-        } catch (SecurityException | IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
