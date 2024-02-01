@@ -1,12 +1,10 @@
 package butvinm.mercury.bot.telegram;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.pengrad.telegrambot.TelegramBot;
-import com.pengrad.telegrambot.model.CallbackQuery;
-import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
@@ -21,8 +19,8 @@ import butvinm.mercury.bot.gitlab.models.Status;
 import butvinm.mercury.bot.storage.Mongo;
 import butvinm.mercury.bot.storage.Redis;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
+import butvinm.mercury.bot.telegram.handlers.Handler;
 import butvinm.mercury.bot.telegram.models.BotUser;
-import kong.unirest.UnirestException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,22 +37,25 @@ public class BotRouter {
 
     private final Mongo<BotUser> usersStore;
 
-    public Object handleUpdate(Update update) {
-        var callbackQuery = update.callbackQuery();
-        if (callbackQuery != null) {
-            var rebuildCallback = RebuildCallback.unpack(callbackQuery.data());
-            if (rebuildCallback.isPresent()) {
-                return handleRebuildCallback(
-                    callbackQuery,
-                    rebuildCallback.get()
-                );
+    private final List<Handler> handlers = new LinkedList<>();
+
+    public void register(Handler handler) {
+        this.handlers.add(handler);
+    }
+
+    public void unregister(Handler handler) {
+        this.handlers.remove(handler);
+    }
+
+    public List<Object> handleUpdate(Update update) {
+        var results = new LinkedList<>();
+        for (var handler : handlers) {
+            var result = handler.handleUpdate(update);
+            if (result.isPresent()) {
+                results.add(result.get());
             }
         }
-        var message = update.message();
-        if (message != null) {
-            return handleMessage(message);
-        }
-        return null;
+        return results;
     }
 
     public SendResponse handlePipelineEvent(PipelineEvent event) {
@@ -74,79 +75,6 @@ public class BotRouter {
     public void handlePipelineMessage(Long pipelineId, String message) {
         pipelinesMessagesStore.putIfAbsent(pipelineId, new ArrayList<>());
         pipelinesMessagesStore.get(pipelineId).add(message);
-    }
-
-    private BotUser handleMessage(Message message) {
-        try {
-            var user = BotUser.builder()
-                .id(message.from().id())
-                .username(message.from().username())
-                .admin(false)
-                .build();
-            if (usersStore.get(user.getId().toString()).isPresent()) {
-                return null;
-            }
-            return usersStore.put(user.getId().toString(), user);
-        } catch (IOException err) {
-            return null;
-        }
-    }
-
-    private SendResponse handleRebuildCallback(
-        CallbackQuery query,
-        RebuildCallback callback
-    ) {
-        try {
-            var userId = query.from().id();
-            var user = usersStore.get(userId.toString());
-            if (user.isPresent() && user.get().getAdmin()) {
-                return retryBuildJobs(callback);
-            }
-            return sendPermissionsAlert();
-        } catch (IOException err) {
-            return sendError(err);
-        }
-    }
-
-    private SendResponse retryBuildJobs(RebuildCallback callback) {
-        var report = "Retry jobs:\n";
-        for (var jobId : callback.getJobIds()) {
-            try {
-                var response = glClient.retryJob(
-                    callback.getProjectId(), jobId
-                );
-                report += "<b>%s:</b> %s\n".formatted(
-                    jobId,
-                    response.isSuccess() ? "OK" : "FAIL"
-                );
-            } catch (UnirestException err) {
-                report += "<b>%s:</b> %s\n".formatted(
-                    jobId,
-                    err.toString()
-                );
-                break;
-            }
-        }
-        var request = new SendMessage(targetChatId, report)
-            .parseMode(ParseMode.HTML);
-
-        return bot.execute(request);
-    }
-
-    private SendResponse sendPermissionsAlert() {
-        var request = new SendMessage(
-            targetChatId,
-            "You are not permitted to run this action."
-        );
-        return bot.execute(request);
-    }
-
-    private SendResponse sendError(Exception error) {
-        var request = new SendMessage(
-            targetChatId,
-            "Something went wrong: %s".formatted(error.getMessage())
-        );
-        return bot.execute(request);
     }
 
     // TODO: add link to the pipeline

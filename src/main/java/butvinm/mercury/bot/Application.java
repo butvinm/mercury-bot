@@ -24,6 +24,8 @@ import butvinm.mercury.bot.gitlab.models.PipelineEvent;
 import butvinm.mercury.bot.storage.Mongo;
 import butvinm.mercury.bot.storage.Redis;
 import butvinm.mercury.bot.telegram.BotRouter;
+import butvinm.mercury.bot.telegram.handlers.AnyMessageHandler;
+import butvinm.mercury.bot.telegram.handlers.RebuildHandler;
 import butvinm.mercury.bot.telegram.models.BotUser;
 
 @SpringBootApplication
@@ -102,12 +104,21 @@ public class Application {
         var bot = new TelegramBot(botToken);
         var pipelineMessagesStore = new Redis<Long, List<String>>();
         var usersStore = new Mongo<BotUser>(usersDb, BotUser.class);
-        return new BotRouter(
+        var router = new BotRouter(
             bot,
             chatId,
             glClient,
             pipelineMessagesStore,
             usersStore
         );
+        router.register(new RebuildHandler(
+            bot,
+            chatId,
+            glClient,
+            pipelineMessagesStore,
+            usersStore
+        ));
+        router.register(new AnyMessageHandler(usersStore));
+        return router;
     }
 }
