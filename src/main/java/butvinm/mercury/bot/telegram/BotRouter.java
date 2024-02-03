@@ -1,10 +1,12 @@
 package butvinm.mercury.bot.telegram;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
@@ -16,26 +18,24 @@ import butvinm.mercury.bot.gitlab.GLClient;
 import butvinm.mercury.bot.gitlab.models.Job;
 import butvinm.mercury.bot.gitlab.models.PipelineEvent;
 import butvinm.mercury.bot.gitlab.models.Status;
-import butvinm.mercury.bot.storage.Mongo;
 import butvinm.mercury.bot.storage.Redis;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
 import butvinm.mercury.bot.telegram.handlers.Handler;
-import butvinm.mercury.bot.telegram.models.BotUser;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Slf4j
-public class BotRouter {
+public class BotRouter implements UpdatesListener {
     private final TelegramBot bot;
-
-    private final String targetChatId;
 
     private final GLClient glClient;
 
     private final Redis<Long, List<String>> pipelinesMessagesStore;
 
-    private final Mongo<BotUser> usersStore;
+    private final UsersStore usersStore;
+
+    private final ChatStore chatStore;
 
     private final List<Handler> handlers = new LinkedList<>();
 
@@ -47,15 +47,15 @@ public class BotRouter {
         this.handlers.remove(handler);
     }
 
-    public List<Object> handleUpdate(Update update) {
-        var results = new LinkedList<>();
-        for (var handler : handlers) {
-            var result = handler.handleUpdate(update);
-            if (result.isPresent()) {
-                results.add(result.get());
+    @Override
+    public int process(List<Update> updates) {
+        for (var update : updates) {
+            for (var handler : handlers) {
+                var res = handler.handleUpdate(update);
+                log.info(res.toString());
             }
         }
-        return results;
+        return CONFIRMED_UPDATES_ALL;
     }
 
     public SendResponse handlePipelineEvent(PipelineEvent event) {
@@ -67,7 +67,11 @@ public class BotRouter {
             .allMatch(j -> Status.isFinished(j.getStatus()));
         log.info(Boolean.toString(buildFinished));
         if (buildFinished) {
-            return sendBuildDigest(event, buildJobs);
+            try {
+                return sendBuildDigest(event, buildJobs);
+            } catch (Exception e) {
+                log.error(e.toString());
+            }
         }
         return null;
     }
@@ -111,7 +115,7 @@ public class BotRouter {
     private SendResponse sendBuildDigest(
         PipelineEvent event,
         List<Job> buildJobs
-    ) {
+    ) throws IOException {
         var digest = createBuildDigest(event, buildJobs);
         var callback = new RebuildCallback(
             event.getProject().getId(),
@@ -120,7 +124,7 @@ public class BotRouter {
         var keyboard = new InlineKeyboardMarkup(
             new InlineKeyboardButton("Rebuild!").callbackData(callback.pack())
         );
-        var request = new SendMessage(targetChatId, digest)
+        var request = new SendMessage(chatStore.getTargetChat().get(), digest)
             .parseMode(ParseMode.HTML)
             .replyMarkup(keyboard);
 

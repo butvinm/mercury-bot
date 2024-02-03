@@ -24,12 +24,18 @@ import butvinm.mercury.bot.gitlab.models.PipelineEvent;
 import butvinm.mercury.bot.storage.Mongo;
 import butvinm.mercury.bot.storage.Redis;
 import butvinm.mercury.bot.telegram.BotRouter;
+import butvinm.mercury.bot.telegram.ChatStore;
+import butvinm.mercury.bot.telegram.UsersStore;
 import butvinm.mercury.bot.telegram.handlers.AnyMessageHandler;
+import butvinm.mercury.bot.telegram.handlers.BindChatHandler;
 import butvinm.mercury.bot.telegram.handlers.RebuildHandler;
+import butvinm.mercury.bot.telegram.handlers.StartHandler;
 import butvinm.mercury.bot.telegram.models.BotUser;
+import lombok.extern.slf4j.Slf4j;
 
 @SpringBootApplication
 @RestController
+@Slf4j
 public class Application {
     private final File shareDir;
 
@@ -40,10 +46,10 @@ public class Application {
     public Application(
         @Value("${share}") Path shareDir,
         @Value("${users.db}") Path usersDb,
+        @Value("${chat.db}") Path chatDb,
         @Value("${gitlab.host}") String glHost,
         @Value("${gitlab.access.token}") String glAccessToken,
-        @Value("${bot.token}") String botToken,
-        @Value("${chat.id}") String chatId
+        @Value("${bot.token}") String botToken
     ) throws ShareDirMissedException {
         this.shareDir = shareDir.toFile();
         if (!this.shareDir.exists()) {
@@ -54,9 +60,9 @@ public class Application {
 
         this.router = initBotRouter(
             botToken,
-            chatId,
             glClient,
-            shareDir.resolve(usersDb).toFile()
+            shareDir.resolve(usersDb).toFile(),
+            shareDir.resolve(chatDb).toFile()
         );
     }
 
@@ -79,13 +85,15 @@ public class Application {
 
     @PostMapping("/bot")
     @JsonDeserialize()
+    @Deprecated
     public Object botWebhook(@RequestBody String updateString) {
         // Two wide-spread JSON serialization libraries,
         // what could went wrong...?
         // I don't wanna configure Spring to use Gson for that specific handler,
         // so just manually call Gson for telegrambot.Update
         var update = new Gson().fromJson(updateString, Update.class);
-        return router.handleUpdate(update);
+        // return router.handleUpdate(update);
+        return null;
     }
 
     private GLClient initGitLabClient(
@@ -97,28 +105,34 @@ public class Application {
 
     private BotRouter initBotRouter(
         String botToken,
-        String chatId,
         GLClient glClient,
-        File usersDb
+        File usersDb,
+        File chatsDb
     ) {
-        var bot = new TelegramBot(botToken);
         var pipelineMessagesStore = new Redis<Long, List<String>>();
-        var usersStore = new Mongo<BotUser>(usersDb, BotUser.class);
+        var usersStore = new UsersStore(usersDb, BotUser.class);
+        var chatStore = new ChatStore(chatsDb, Long.class);
+
+        var bot = new TelegramBot(botToken);
         var router = new BotRouter(
             bot,
-            chatId,
             glClient,
             pipelineMessagesStore,
-            usersStore
+            usersStore,
+            chatStore
         );
         router.register(new RebuildHandler(
             bot,
-            chatId,
             glClient,
             pipelineMessagesStore,
-            usersStore
+            usersStore,
+            chatStore
         ));
+        router.register(new StartHandler(bot));
         router.register(new AnyMessageHandler(usersStore));
+        router.register(new BindChatHandler(bot, chatStore));
+
+        bot.setUpdatesListener(router, e -> log.error(e.toString()));
         return router;
     }
 }

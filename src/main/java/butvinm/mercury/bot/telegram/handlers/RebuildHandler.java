@@ -2,6 +2,7 @@ package butvinm.mercury.bot.telegram.handlers;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import com.pengrad.telegrambot.TelegramBot;
@@ -12,12 +13,13 @@ import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 
 import butvinm.mercury.bot.gitlab.GLClient;
-import butvinm.mercury.bot.storage.Mongo;
 import butvinm.mercury.bot.storage.Redis;
+import butvinm.mercury.bot.telegram.ChatStore;
+import butvinm.mercury.bot.telegram.UsersStore;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
-import butvinm.mercury.bot.telegram.models.BotUser;
 import kong.unirest.UnirestException;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Handle rebuild pipeline button.
@@ -25,16 +27,17 @@ import lombok.Data;
  * Restart all pipeline jobs and send status.
  */
 @Data
+@Slf4j
 public class RebuildHandler implements Handler {
     private final TelegramBot bot;
-
-    private final String targetChatId;
 
     private final GLClient glClient;
 
     private final Redis<Long, List<String>> pipelinesMessagesStore;
 
-    private final Mongo<BotUser> usersStore;
+    private final UsersStore usersStore;
+
+    private final ChatStore chatStore;
 
     @Override
     public Optional<Object> handleUpdate(Update update) {
@@ -67,7 +70,8 @@ public class RebuildHandler implements Handler {
         }
     }
 
-    private SendResponse retryBuildJobs(RebuildCallback callback) {
+    private SendResponse retryBuildJobs(RebuildCallback callback)
+        throws IOException {
         var report = "Retry jobs:\n";
         for (var jobId : callback.getJobIds()) {
             try {
@@ -86,25 +90,32 @@ public class RebuildHandler implements Handler {
                 break;
             }
         }
-        var request = new SendMessage(targetChatId, report)
-            .parseMode(ParseMode.HTML);
-
+        var request = new SendMessage(
+            chatStore.getTargetChat().get(),
+            report
+        ).parseMode(ParseMode.HTML);
         return bot.execute(request);
     }
 
-    private SendResponse sendPermissionsAlert() {
+    private SendResponse sendPermissionsAlert() throws IOException {
         var request = new SendMessage(
-            targetChatId,
+            chatStore.getTargetChat().get(),
             "You are not permitted to run this action."
         );
         return bot.execute(request);
     }
 
     private SendResponse sendError(Exception error) {
-        var request = new SendMessage(
-            targetChatId,
-            "Something went wrong: %s".formatted(error.getMessage())
-        );
-        return bot.execute(request);
+        try {
+            var targetChat = chatStore.getTargetChat().get();
+            var request = new SendMessage(
+                targetChat,
+                "Something went wrong: %s".formatted(error.getMessage())
+            );
+            return bot.execute(request);
+        } catch (IOException | NoSuchElementException e) {
+            log.error(e.toString());
+            return null;
+        }
     }
 }
