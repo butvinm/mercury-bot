@@ -12,16 +12,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.google.gson.Gson;
 import com.pengrad.telegrambot.TelegramBot;
-import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.response.SendResponse;
 
 import butvinm.mercury.bot.exceptions.ShareDirMissedException;
 import butvinm.mercury.bot.gitlab.GLClient;
 import butvinm.mercury.bot.gitlab.models.PipelineEvent;
-import butvinm.mercury.bot.storage.Mongo;
 import butvinm.mercury.bot.storage.Redis;
 import butvinm.mercury.bot.telegram.BotRouter;
 import butvinm.mercury.bot.telegram.ChatStore;
@@ -81,19 +77,6 @@ public class Application {
         @RequestBody String message
     ) {
         router.handlePipelineMessage(pipelineId, message);
-    }
-
-    @PostMapping("/bot")
-    @JsonDeserialize()
-    @Deprecated
-    public Object botWebhook(@RequestBody String updateString) {
-        // Two wide-spread JSON serialization libraries,
-        // what could went wrong...?
-        // I don't wanna configure Spring to use Gson for that specific handler,
-        // so just manually call Gson for telegrambot.Update
-        var update = new Gson().fromJson(updateString, Update.class);
-        // return router.handleUpdate(update);
-        return null;
     }
 
     private GLClient initGitLabClient(
