@@ -1,7 +1,6 @@
 BOT_TOKEN=
-BOT_SECRET=
-CHAT_ID=
-GITLAB_HOST=
+GITLAB_HOST=https://gitlab.com
 GITLAB_ACCESS_TOKEN=
-SHARE=/share
+SHARE=share
 USERS_DB=users.db
+CHAT_DB=chat.db
