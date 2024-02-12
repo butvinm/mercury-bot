@@ -34,13 +34,13 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelinesController {
     private final TelegramBot bot;
 
-    private final Redis<Long, List<String>> pipelinesMessagesStore;
+    private final MessagesStore messagesStore;
 
     private final ChatStore chatStore;
 
     @PostMapping("/pipelines")
-    public SendResponse pipelineHandler(@RequestBody PipelineEvent event) {
-        List<Job> buildJobs = event.getJobs().stream()
+    public SendResponse pipelineHandler(@RequestBody PipelineEvent pipeline) {
+        List<Job> buildJobs = pipeline.getJobs().stream()
             .filter(j -> j.getStage().equals("build")).toList();
 
         var buildFinished = buildJobs.stream()
@@ -48,7 +48,7 @@ public class PipelinesController {
 
         if (buildFinished) {
             try {
-                return sendBuildDigest(event, buildJobs);
+                return sendPipelineDigest(pipeline, buildJobs);
             } catch (Exception e) {
                 log.error(e.toString());
             }
@@ -61,48 +61,44 @@ public class PipelinesController {
         @PathVariable Long pipelineId,
         @RequestBody String message
     ) {
-        handlePipelineMessage(pipelineId, message);
+        messagesStore.putIfAbsent(pipelineId, new ArrayList<>());
+        messagesStore.get(pipelineId).add(message);
     }
 
     // TODO: add link to the pipeline
-    private String createBuildDigest(
-        PipelineEvent event,
+    private String createPipelineDigest(
+        PipelineEvent pipeline,
         List<Job> buildJobs
     ) {
-        var attrs = event.getAttributes();
-        var digest = "" +
-            "Pipeline <code>%d</code> finished.\n\n".formatted(attrs.getId()) +
-            "<b>Finished at</b>: %s\n".formatted(attrs.getFinishedAt()) +
-            "<b>Duration</b>: %s s\n".formatted(attrs.getDuration()) +
-            "<b>Created by</b>: %s\n\n".formatted(event.getUser().getName()) +
-            "<b>Jobs</b>:\n";
+        var attrs = pipeline.getAttributes();
+        var fsb = new FancyStringBuilder()
+            .l("Pipeline <code>%s</code> finished.", attrs.getId()).n()
+            .l("<b>Finished at</b>: %s", attrs.getFinishedAt())
+            .l("<b>Duration</b>: %s s", attrs.getDuration())
+            .l("<b>Created by</b>: %s", pipeline.getUser().getName());
 
+        fsb.n().l("<b>Jobs</b>:");
         for (var job : buildJobs) {
-            digest += "<b>%s:</b> %s\n".formatted(
-                job.getName(),
-                job.getStatus().getLabel()
-            );
+            fsb.l("<b>%s:</b> %s", job.getName(), job.getStatus().getLabel());
         }
 
-        var messages = pipelinesMessagesStore.remove(
-            event.getAttributes().getId()
+        var messages = messagesStore.remove(
+            pipeline.getAttributes().getId()
         );
         if (messages != null) {
-            digest += "\n<b>Messages</b>:\n";
-            for (var msg : messages) {
-                digest += msg + "\n";
-            }
+            fsb.n().l("<b>Messages</b>:");
+            messages.forEach(m -> fsb.l(m));
         }
-        return digest;
+        return fsb.toString();
     }
 
-    private SendResponse sendBuildDigest(
-        PipelineEvent event,
+    private SendResponse sendPipelineDigest(
+        PipelineEvent pipeline,
         List<Job> buildJobs
     ) throws IOException {
-        var digest = createBuildDigest(event, buildJobs);
+        var digest = createPipelineDigest(pipeline, buildJobs);
         var callback = new RebuildCallback(
-            event.getProject().getId(),
+            pipeline.getProject().getId(),
             buildJobs.stream().map(j -> j.getId()).toList()
         );
         var keyboard = new InlineKeyboardMarkup(
@@ -113,10 +109,5 @@ public class PipelinesController {
             .replyMarkup(keyboard);
 
         return bot.execute(request);
-    }
-
-    public void handlePipelineMessage(Long pipelineId, String message) {
-        pipelinesMessagesStore.putIfAbsent(pipelineId, new ArrayList<>());
-        pipelinesMessagesStore.get(pipelineId).add(message);
     }
 }
