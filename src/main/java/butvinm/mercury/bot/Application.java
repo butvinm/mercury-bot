@@ -2,7 +2,6 @@ package butvinm.mercury.bot;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -23,7 +22,6 @@ import butvinm.mercury.bot.telegram.handlers.BindChatHandler;
 import butvinm.mercury.bot.telegram.handlers.RebuildHandler;
 import butvinm.mercury.bot.telegram.handlers.StartHandler;
 import butvinm.mercury.bot.telegram.models.BotUser;
-import butvinm.mercury.bot.utils.storage.Redis;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 

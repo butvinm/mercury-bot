@@ -16,14 +16,17 @@ Before using Mercury Bot, make sure to:
 
 2. Set up a webhook in GitLab to trigger Mercury Bot:
     - Navigate to Repository -> Settings -> Webhooks.
-    - Add a new webhook:
+    - Add a new pipelines webhook:
         - **URL**: `<application-host>/pipelines`.
-        - **Trigger**: Pipelines events.
+        - **Trigger**: Pipeline events.
+    - Add a new jobs webhook:
+        - **URL**: `<application-host>/jobs`.
+        - **Trigger**: Job events.
 
 3. Get Personal Access Token (PAT) for GitLab:
     - Navigate to Edit profile -> Access Token -> Add new token.
     - Enter a name and expiry date for the token.
-    - Select the desired scopes. Mercury Bot requieres at least write and read access for pipelines and build jobs.
+    - Select the desired scopes. Mercury Bot requires at least write and read access for pipelines and jobs.
 
 ## Build and Deployment
 
@@ -35,10 +38,10 @@ Before using Mercury Bot, make sure to:
 ```bash
 java -jar app.jar \
     --share="./share" \
-    --bot.token=Token from BotFather
-    --gitlab.host=https://gitlab.com
-    --gitlab.access_token=GitLab PAT
-    --users.db=users.db
+    --bot.token=Token from BotFather \
+    --gitlab.host=https://gitlab.com \
+    --gitlab.access.token=GitLab PAT \
+    --users.db=users.db \
     --chat.db=chat.db
 ```
 
@@ -92,7 +95,7 @@ Only bot admins can use "Rebuild" button. To grant admin right to user go to fil
 
 ### Custom messages
 
-You can push additional information to the bot during pipeline. We have `scripts/bot.sh` script that you can trigger to send message that would be added to bot pipeline digest.
+You can push additional information to the bot during pipeline. We have `scripts/pipeline_message.sh` and `scripts/job_message.sh` scripts those you can trigger to send message that would be added to bot digests.
 
 ```yaml
 variables:
@@ -103,7 +106,8 @@ buildServer:
     image: maven:3.8.5-openjdk-11
     script:
         - mvn clean install -e -DskipTests=true
-        - ./bot.sh "Hello, meine Freunde!"
+        - ./pipeline_message.sh "Hello, meine Freunde!"
+        - ./job_message.sh "Hello, meine Freunde!"
 ```
 
 ## Roadmap
@@ -114,5 +118,5 @@ buildServer:
 - [ ] Notifications in private chat, not only in channels
 - [ ] Allow bind multiple channels
 - [ ] Admin rights management from UI
-- [ ] Digest about each individual pipeline job
+- [x] Digest about each individual pipeline job
 - [ ] Pipelines filtering

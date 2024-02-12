@@ -8,7 +8,6 @@ import com.pengrad.telegrambot.model.Update;
 
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.models.BotUser;
-import butvinm.mercury.bot.utils.storage.Mongo;
 import lombok.Data;
 
 /**
