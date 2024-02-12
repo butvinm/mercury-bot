@@ -10,7 +10,7 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 
-import butvinm.mercury.bot.telegram.ChatStore;
+import butvinm.mercury.bot.stores.ChatStore;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,7 +36,7 @@ public class BindChatHandler implements Handler {
                 log.error(e.toString());
             }
         }
-        return Optional.of(chat);
+        return Optional.empty();
     }
 
     private SendResponse bindChat(Message message, ChatShared chat) throws IOException {

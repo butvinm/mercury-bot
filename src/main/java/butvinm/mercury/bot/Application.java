@@ -2,31 +2,27 @@ package butvinm.mercury.bot;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pengrad.telegrambot.TelegramBot;
-import com.pengrad.telegrambot.response.SendResponse;
 
 import butvinm.mercury.bot.exceptions.ShareDirMissedException;
 import butvinm.mercury.bot.gitlab.GLClient;
-import butvinm.mercury.bot.gitlab.models.PipelineEvent;
-import butvinm.mercury.bot.storage.Redis;
+import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.MessagesStore;
+import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.BotRouter;
-import butvinm.mercury.bot.telegram.ChatStore;
-import butvinm.mercury.bot.telegram.UsersStore;
 import butvinm.mercury.bot.telegram.handlers.AnyMessageHandler;
 import butvinm.mercury.bot.telegram.handlers.BindChatHandler;
 import butvinm.mercury.bot.telegram.handlers.RebuildHandler;
 import butvinm.mercury.bot.telegram.handlers.StartHandler;
 import butvinm.mercury.bot.telegram.models.BotUser;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootApplication
@@ -35,9 +31,22 @@ import lombok.extern.slf4j.Slf4j;
 public class Application {
     private final File shareDir;
 
+    private final BotRouter router;
+
+    @Getter(onMethod = @__({ @Bean }))
+    private final TelegramBot bot;
+
+    @Getter(onMethod = @__({ @Bean }))
     private final GLClient glClient;
 
-    private final BotRouter router;
+    @Getter(onMethod = @__({ @Bean }))
+    private final MessagesStore messagesStore;
+
+    @Getter(onMethod = @__({ @Bean }))
+    private final UsersStore usersStore;
+
+    @Getter(onMethod = @__({ @Bean }))
+    private final ChatStore chatStore;
 
     public Application(
         @Value("${share}") Path shareDir,
@@ -54,29 +63,31 @@ public class Application {
 
         this.glClient = initGitLabClient(glHost, glAccessToken);
 
-        this.router = initBotRouter(
-            botToken,
-            glClient,
+        this.bot = new TelegramBot(botToken);
+
+        this.messagesStore = new MessagesStore();
+
+        this.usersStore = new UsersStore(
             shareDir.resolve(usersDb).toFile(),
-            shareDir.resolve(chatDb).toFile()
+            BotUser.class
+        );
+
+        this.chatStore = new ChatStore(
+            shareDir.resolve(chatDb).toFile(),
+            Long.class
+        );
+
+        this.router = initBotRouter(
+            bot,
+            glClient,
+            messagesStore,
+            usersStore,
+            chatStore
         );
     }
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
-    }
-
-    @PostMapping("/pipelines")
-    public SendResponse pipelineHandler(@RequestBody PipelineEvent event) {
-        return router.handlePipelineEvent(event);
-    }
-
-    @PostMapping("/pipelines/{pipelineId}/messages")
-    public void pipelineMessageHandler(
-        @PathVariable Long pipelineId,
-        @RequestBody String message
-    ) {
-        router.handlePipelineMessage(pipelineId, message);
     }
 
     private GLClient initGitLabClient(
@@ -87,27 +98,23 @@ public class Application {
     }
 
     private BotRouter initBotRouter(
-        String botToken,
+        TelegramBot bot,
         GLClient glClient,
-        File usersDb,
-        File chatsDb
+        MessagesStore messagesStore,
+        UsersStore usersStore,
+        ChatStore chatStore
     ) {
-        var pipelineMessagesStore = new Redis<Long, List<String>>();
-        var usersStore = new UsersStore(usersDb, BotUser.class);
-        var chatStore = new ChatStore(chatsDb, Long.class);
-
-        var bot = new TelegramBot(botToken);
         var router = new BotRouter(
             bot,
             glClient,
-            pipelineMessagesStore,
+            messagesStore,
             usersStore,
             chatStore
         );
         router.register(new RebuildHandler(
             bot,
             glClient,
-            pipelineMessagesStore,
+            messagesStore,
             usersStore,
             chatStore
         ));
