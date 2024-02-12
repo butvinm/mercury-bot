@@ -36,7 +36,7 @@ public class BindChatHandler implements Handler {
                 log.error(e.toString());
             }
         }
-        return Optional.of(chat);
+        return Optional.empty();
     }
 
     private SendResponse bindChat(Message message, ChatShared chat) throws IOException {
