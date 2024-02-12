@@ -1,7 +1,6 @@
 package butvinm.mercury.bot.telegram.handlers;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -13,9 +12,9 @@ import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 
 import butvinm.mercury.bot.gitlab.GLClient;
-import butvinm.mercury.bot.storage.Redis;
-import butvinm.mercury.bot.telegram.ChatStore;
-import butvinm.mercury.bot.telegram.UsersStore;
+import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.MessagesStore;
+import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
 import kong.unirest.UnirestException;
 import lombok.Data;
@@ -33,7 +32,7 @@ public class RebuildHandler implements Handler {
 
     private final GLClient glClient;
 
-    private final Redis<Long, List<String>> pipelinesMessagesStore;
+    private final MessagesStore messagesStore;
 
     private final UsersStore usersStore;
 

@@ -1,4 +1,4 @@
-package butvinm.mercury.bot.storage;
+package butvinm.mercury.bot.utils.storage;
 
 import java.io.File;
 import java.io.IOException;
