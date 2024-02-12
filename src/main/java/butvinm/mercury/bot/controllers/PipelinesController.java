@@ -20,9 +20,10 @@ import com.pengrad.telegrambot.response.SendResponse;
 import butvinm.mercury.bot.gitlab.models.Job;
 import butvinm.mercury.bot.gitlab.models.PipelineEvent;
 import butvinm.mercury.bot.gitlab.models.Status;
-import butvinm.mercury.bot.storage.Redis;
-import butvinm.mercury.bot.telegram.ChatStore;
+import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
+import butvinm.mercury.bot.utils.FancyStringBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

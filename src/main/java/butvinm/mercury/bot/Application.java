@@ -14,15 +14,16 @@ import com.pengrad.telegrambot.TelegramBot;
 
 import butvinm.mercury.bot.exceptions.ShareDirMissedException;
 import butvinm.mercury.bot.gitlab.GLClient;
-import butvinm.mercury.bot.storage.Redis;
+import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.MessagesStore;
+import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.BotRouter;
-import butvinm.mercury.bot.telegram.ChatStore;
-import butvinm.mercury.bot.telegram.UsersStore;
 import butvinm.mercury.bot.telegram.handlers.AnyMessageHandler;
 import butvinm.mercury.bot.telegram.handlers.BindChatHandler;
 import butvinm.mercury.bot.telegram.handlers.RebuildHandler;
 import butvinm.mercury.bot.telegram.handlers.StartHandler;
 import butvinm.mercury.bot.telegram.models.BotUser;
+import butvinm.mercury.bot.utils.storage.Redis;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,7 +42,7 @@ public class Application {
     private final GLClient glClient;
 
     @Getter(onMethod = @__({ @Bean }))
-    private final Redis<Long, List<String>> pipelinesMessagesStore;
+    private final MessagesStore pipelinesMessagesStore;
 
     @Getter(onMethod = @__({ @Bean }))
     private final UsersStore usersStore;
@@ -66,7 +67,7 @@ public class Application {
 
         this.bot = new TelegramBot(botToken);
 
-        this.pipelinesMessagesStore = new Redis<Long, List<String>>();
+        this.pipelinesMessagesStore = new MessagesStore();
 
         this.usersStore = new UsersStore(
             shareDir.resolve(usersDb).toFile(),
@@ -101,7 +102,7 @@ public class Application {
     private BotRouter initBotRouter(
         TelegramBot bot,
         GLClient glClient,
-        Redis<Long, List<String>> pipelinesMessagesStore,
+        MessagesStore pipelinesMessagesStore,
         UsersStore usersStore,
         ChatStore chatStore
     ) {

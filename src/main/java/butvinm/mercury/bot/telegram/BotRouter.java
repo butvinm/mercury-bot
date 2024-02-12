@@ -8,7 +8,9 @@ import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
 
 import butvinm.mercury.bot.gitlab.GLClient;
-import butvinm.mercury.bot.storage.Redis;
+import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.MessagesStore;
+import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.handlers.Handler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +22,7 @@ public class BotRouter implements UpdatesListener {
 
     private final GLClient glClient;
 
-    private final Redis<Long, List<String>> pipelinesMessagesStore;
+    private final MessagesStore pipelinesMessagesStore;
 
     private final UsersStore usersStore;
 

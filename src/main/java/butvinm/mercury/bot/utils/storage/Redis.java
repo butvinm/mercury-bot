@@ -1,4 +1,4 @@
-package butvinm.mercury.bot.storage;
+package butvinm.mercury.bot.utils.storage;
 
 import java.time.LocalDateTime;
 import java.time.Period;
