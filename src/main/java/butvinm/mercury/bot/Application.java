@@ -42,7 +42,7 @@ public class Application {
     private final GLClient glClient;
 
     @Getter(onMethod = @__({ @Bean }))
-    private final MessagesStore pipelinesMessagesStore;
+    private final MessagesStore messagesStore;
 
     @Getter(onMethod = @__({ @Bean }))
     private final UsersStore usersStore;
@@ -67,7 +67,7 @@ public class Application {
 
         this.bot = new TelegramBot(botToken);
 
-        this.pipelinesMessagesStore = new MessagesStore();
+        this.messagesStore = new MessagesStore();
 
         this.usersStore = new UsersStore(
             shareDir.resolve(usersDb).toFile(),
@@ -82,7 +82,7 @@ public class Application {
         this.router = initBotRouter(
             bot,
             glClient,
-            pipelinesMessagesStore,
+            messagesStore,
             usersStore,
             chatStore
         );
@@ -102,21 +102,21 @@ public class Application {
     private BotRouter initBotRouter(
         TelegramBot bot,
         GLClient glClient,
-        MessagesStore pipelinesMessagesStore,
+        MessagesStore messagesStore,
         UsersStore usersStore,
         ChatStore chatStore
     ) {
         var router = new BotRouter(
             bot,
             glClient,
-            pipelinesMessagesStore,
+            messagesStore,
             usersStore,
             chatStore
         );
         router.register(new RebuildHandler(
             bot,
             glClient,
-            pipelinesMessagesStore,
+            messagesStore,
             usersStore,
             chatStore
         ));

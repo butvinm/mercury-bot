@@ -22,7 +22,7 @@ public class BotRouter implements UpdatesListener {
 
     private final GLClient glClient;
 
-    private final MessagesStore pipelinesMessagesStore;
+    private final MessagesStore messagesStore;
 
     private final UsersStore usersStore;
 

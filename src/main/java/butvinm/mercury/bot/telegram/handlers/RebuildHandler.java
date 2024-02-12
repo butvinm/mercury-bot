@@ -32,7 +32,7 @@ public class RebuildHandler implements Handler {
 
     private final GLClient glClient;
 
-    private final MessagesStore pipelinesMessagesStore;
+    private final MessagesStore messagesStore;
 
     private final UsersStore usersStore;
 
