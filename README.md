@@ -113,8 +113,8 @@ buildServer:
 - [x] Pipeline job's digest
 - [x] Rebuild button
 - [ ] Pipeline tag info in digest
-- [+] Notifications in private chat, not only in groups
-- [+] Allow bind multiple groups
+- [x] Notifications in private chat, not only in groups
+- [x] Allow bind multiple groups
 - [ ] Admin rights management from UI
 - [x] Digest about each individual pipeline job
 - [ ] Pipelines filtering
