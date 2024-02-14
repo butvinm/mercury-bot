@@ -37,7 +37,7 @@ Before using Mercury Bot, make sure to:
 3. Run the following command:
 ```bash
 java -jar app.jar \
-    --share="./share" \
+    --share="/share" \
     --bot.token=Token from BotFather \
     --gitlab.host=https://gitlab.com \
     --gitlab.access.token=GitLab PAT \
@@ -52,7 +52,7 @@ java -jar app.jar \
 BOT_TOKEN=Token from BotFather
 GITLAB_HOST=https://gitlab.com
 GITLAB_ACCESS_TOKEN=GitLab PAT
-SHARE=share
+SHARE=/share
 USERS_DB=users.db
 CHATS_DB=chats.db
 ```
