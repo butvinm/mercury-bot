@@ -18,16 +18,14 @@ public class AnyMessageHandler implements Handler {
     private final UsersStore usersStore;
 
     @Override
-    public Optional<Object> handleUpdate(Update update) {
+    public Optional<Object> handleUpdate(
+        Update update
+    ) throws IOException {
         var message = update.message();
-        if (message != null) {
-            try {
-                return Optional.of(handleMessage(message));
-            } catch (IOException e) {
-                return Optional.of(e);
-            }
+        if (message == null) {
+            return Optional.empty();
         }
-        return Optional.empty();
+        return Optional.of(handleMessage(message));
     }
 
     private BotUser handleMessage(Message message) throws IOException {

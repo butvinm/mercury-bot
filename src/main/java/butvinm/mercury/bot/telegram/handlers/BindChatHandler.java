@@ -10,37 +10,48 @@ import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 
-import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.ChatsStore;
+import butvinm.mercury.bot.stores.UsersStore;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
 @Data
-@Slf4j
 public class BindChatHandler implements Handler {
     private final TelegramBot bot;
 
-    private final ChatStore chatStore;
+    private final ChatsStore chatsStore;
+
+    private final UsersStore usersStore;
 
     @Override
-    public Optional<Object> handleUpdate(Update update) {
+    public Optional<Object> handleUpdate(
+        Update update
+    ) throws IOException {
         var message = update.message();
         if (message == null) {
             return Optional.empty();
         }
 
         var chat = message.chatShared();
-        if (chat != null) {
-            try {
-                bindChat(message, chat);
-            } catch (Exception e) {
-                log.error(e.toString());
-            }
+        if (chat == null) {
+            return Optional.empty();
         }
-        return Optional.empty();
+        return Optional.of(bindChat(message, chat));
     }
 
-    private SendResponse bindChat(Message message, ChatShared chat) throws IOException {
-        chatStore.setTargetChat(chat.chatId());
+    private SendResponse bindChat(
+        Message message,
+        ChatShared chat
+    ) throws IOException {
+        var user = usersStore.get(message.from().id().toString());
+        if (user.isEmpty() || !user.get().getAdmin()) {
+            var request = new SendMessage(
+                message.chat().id(),
+                "You are not permitted to run this action."
+            );
+            return bot.execute(request);
+        }
+
+        chatsStore.put(chat.chatId().toString(), chat.chatId());
 
         var request = new SendMessage(message.chat().id(), "Chat was bind");
         return bot.execute(request);
