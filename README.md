@@ -26,7 +26,7 @@ Before using Mercury Bot, make sure to:
 3. Get Personal Access Token (PAT) for GitLab:
     - Navigate to Edit profile -> Access Token -> Add new token.
     - Enter a name and expiry date for the token.
-    - Select the desired scopes. Mercury Bot requires at least write and read access for pipelines and jobs.
+    - Select `api` scope.
 
 ## Build and Deployment
 
