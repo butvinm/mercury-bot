@@ -1,7 +1,7 @@
 package butvinm.mercury.bot.telegram.handlers;
 
 import java.io.IOException;
-import java.util.NoSuchElementException;
+import java.util.List;
 import java.util.Optional;
 
 import com.pengrad.telegrambot.TelegramBot;
@@ -12,13 +12,14 @@ import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 
 import butvinm.mercury.bot.gitlab.GLClient;
-import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.ChatsStore;
 import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
+import butvinm.mercury.bot.telegram.utils.MessagesUtils;
+import butvinm.mercury.bot.utils.FancyStringBuilder;
 import kong.unirest.UnirestException;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Handle rebuild pipeline button.
@@ -26,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
  * Restart all pipeline jobs and send status.
  */
 @Data
-@Slf4j
 public class RebuildHandler implements Handler {
     private final TelegramBot bot;
 
@@ -36,53 +36,59 @@ public class RebuildHandler implements Handler {
 
     private final UsersStore usersStore;
 
-    private final ChatStore chatStore;
+    private final ChatsStore chatsStore;
 
     @Override
-    public Optional<Object> handleUpdate(Update update) {
+    public Optional<Object> handleUpdate(
+        Update update
+    ) throws IOException {
         var callbackQuery = update.callbackQuery();
-        if (callbackQuery != null) {
-            var rebuildCallback = RebuildCallback.unpack(callbackQuery.data());
-            if (rebuildCallback.isPresent()) {
-                return Optional.of(handleRebuildCallback(
-                    callbackQuery,
-                    rebuildCallback.get()
-                ));
-            }
+        if (callbackQuery == null) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        var rebuildCallback = RebuildCallback.unpack(callbackQuery.data());
+        if (rebuildCallback.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(handleRebuildCallback(
+            callbackQuery,
+            rebuildCallback.get()
+        ));
     }
 
-    private SendResponse handleRebuildCallback(
+    private List<SendResponse> handleRebuildCallback(
         CallbackQuery query,
         RebuildCallback callback
-    ) {
-        try {
-            var userId = query.from().id();
-            var user = usersStore.get(userId.toString());
-            if (user.isPresent() && user.get().getAdmin()) {
-                return retryBuildJobs(callback);
-            }
-            return sendPermissionsAlert();
-        } catch (IOException err) {
-            return sendError(err);
+    ) throws IOException {
+        var userId = query.from().id();
+        var user = usersStore.get(userId.toString());
+        if (user.isPresent() && user.get().getAdmin()) {
+            return retryBuildJobs(query, callback);
         }
+        return List.of(sendPermissionsAlert(query));
     }
 
-    private SendResponse retryBuildJobs(RebuildCallback callback)
-        throws IOException {
-        var report = "Retry jobs:\n";
+    private List<SendResponse> retryBuildJobs(
+        CallbackQuery query,
+        RebuildCallback callback
+    ) throws IOException {
+        var fsb = new FancyStringBuilder()
+            .l("Retry jobs:");
         for (var jobId : callback.getJobIds()) {
             try {
                 var response = glClient.retryJob(
-                    callback.getProjectId(), jobId
+                    callback.getProjectId(),
+                    jobId
                 );
-                report += "<b>%s:</b> %s\n".formatted(
+                fsb.l(
+                    "<b>%s:</b> %s",
                     jobId,
                     response.isSuccess() ? "OK" : "FAIL"
                 );
             } catch (UnirestException err) {
-                report += "<b>%s:</b> %s\n".formatted(
+                fsb.l(
+                    "<b>%s:</b> %s",
                     jobId,
                     err.toString()
                 );
@@ -90,31 +96,20 @@ public class RebuildHandler implements Handler {
             }
         }
         var request = new SendMessage(
-            chatStore.getTargetChat().get(),
-            report
+            null,
+            fsb.toString()
         ).parseMode(ParseMode.HTML);
-        return bot.execute(request);
+
+        return MessagesUtils.spread(bot, request, chatsStore.list().keySet());
     }
 
-    private SendResponse sendPermissionsAlert() throws IOException {
+    private SendResponse sendPermissionsAlert(
+        CallbackQuery query
+    ) throws IOException {
         var request = new SendMessage(
-            chatStore.getTargetChat().get(),
+            query.message().chat().id(),
             "You are not permitted to run this action."
         );
         return bot.execute(request);
-    }
-
-    private SendResponse sendError(Exception error) {
-        try {
-            var targetChat = chatStore.getTargetChat().get();
-            var request = new SendMessage(
-                targetChat,
-                "Something went wrong: %s".formatted(error.getMessage())
-            );
-            return bot.execute(request);
-        } catch (IOException | NoSuchElementException e) {
-            log.error(e.toString());
-            return null;
-        }
     }
 }

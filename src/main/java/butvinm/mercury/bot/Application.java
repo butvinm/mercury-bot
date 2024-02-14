@@ -13,7 +13,7 @@ import com.pengrad.telegrambot.TelegramBot;
 
 import butvinm.mercury.bot.exceptions.ShareDirMissedException;
 import butvinm.mercury.bot.gitlab.GLClient;
-import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.ChatsStore;
 import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.BotRouter;
@@ -46,12 +46,12 @@ public class Application {
     private final UsersStore usersStore;
 
     @Getter(onMethod = @__({ @Bean }))
-    private final ChatStore chatStore;
+    private final ChatsStore chatsStore;
 
     public Application(
         @Value("${share}") Path shareDir,
         @Value("${users.db}") Path usersDb,
-        @Value("${chat.db}") Path chatDb,
+        @Value("${chats.db}") Path chatDb,
         @Value("${gitlab.host}") String glHost,
         @Value("${gitlab.access.token}") String glAccessToken,
         @Value("${bot.token}") String botToken
@@ -72,7 +72,7 @@ public class Application {
             BotUser.class
         );
 
-        this.chatStore = new ChatStore(
+        this.chatsStore = new ChatsStore(
             shareDir.resolve(chatDb).toFile(),
             Long.class
         );
@@ -82,7 +82,7 @@ public class Application {
             glClient,
             messagesStore,
             usersStore,
-            chatStore
+            chatsStore
         );
     }
 
@@ -102,25 +102,25 @@ public class Application {
         GLClient glClient,
         MessagesStore messagesStore,
         UsersStore usersStore,
-        ChatStore chatStore
+        ChatsStore chatsStore
     ) {
         var router = new BotRouter(
             bot,
             glClient,
             messagesStore,
             usersStore,
-            chatStore
+            chatsStore
         );
         router.register(new RebuildHandler(
             bot,
             glClient,
             messagesStore,
             usersStore,
-            chatStore
+            chatsStore
         ));
-        router.register(new StartHandler(bot));
+        router.register(new StartHandler(bot, chatsStore));
         router.register(new AnyMessageHandler(usersStore));
-        router.register(new BindChatHandler(bot, chatStore));
+        router.register(new BindChatHandler(bot, chatsStore, usersStore));
 
         bot.setUpdatesListener(router, e -> log.error(e.toString()));
         return router;
