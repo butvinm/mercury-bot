@@ -3,4 +3,4 @@ GITLAB_HOST=https://gitlab.com
 GITLAB_ACCESS_TOKEN=
 SHARE=share
 USERS_DB=users.db
-CHAT_DB=chat.db
+CHATS_DB=chats.db

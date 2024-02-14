@@ -5,5 +5,5 @@ import java.util.Optional;
 import com.pengrad.telegrambot.model.Update;
 
 public interface Handler {
-    Optional<Object> handleUpdate(Update update);
+    Optional<Object> handleUpdate(Update update) throws Exception;
 }

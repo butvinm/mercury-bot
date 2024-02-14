@@ -8,7 +8,7 @@ import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
 
 import butvinm.mercury.bot.gitlab.GLClient;
-import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.ChatsStore;
 import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.handlers.Handler;
@@ -26,7 +26,7 @@ public class BotRouter implements UpdatesListener {
 
     private final UsersStore usersStore;
 
-    private final ChatStore chatStore;
+    private final ChatsStore chatsStore;
 
     private final List<Handler> handlers = new LinkedList<>();
 
@@ -42,8 +42,12 @@ public class BotRouter implements UpdatesListener {
     public int process(List<Update> updates) {
         for (var update : updates) {
             for (var handler : handlers) {
-                var res = handler.handleUpdate(update);
-                log.info(res.toString());
+                try {
+                    var res = handler.handleUpdate(update);
+                    log.info(res.toString());
+                } catch (Exception e) {
+                    log.error(e.toString());
+                }
             }
         }
         return CONFIRMED_UPDATES_ALL;

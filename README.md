@@ -42,7 +42,7 @@ java -jar app.jar \
     --gitlab.host=https://gitlab.com \
     --gitlab.access.token=GitLab PAT \
     --users.db=users.db \
-    --chat.db=chat.db
+    --chats.db=chats.db
 ```
 
 ### ~~For zoomers~~ In Docker
@@ -54,7 +54,7 @@ GITLAB_HOST=https://gitlab.com
 GITLAB_ACCESS_TOKEN=GitLab PAT
 SHARE=share
 USERS_DB=users.db
-CHAT_DB=chat.db
+CHATS_DB=chats.db
 ```
 
 2. Build the Docker image:
@@ -69,14 +69,12 @@ scripts/run.sh
 
 ## Management and configuration
 
-### Bind group or channel
+### Bind group or group
 
-To bind bot to the channel:
-- Add bot to the channel members
+To bind bot to the group:
+- Add bot to the group members
 - Go to private chat with bot and type `/start`
 - Bot would send your **Bind** button. Click it and selet target channke. In case of success bot would reply "Chat was bind".
-
-> Currently, you can add bind one channel
 
 ### Rebuild button and admin rights
 
@@ -115,8 +113,8 @@ buildServer:
 - [x] Pipeline job's digest
 - [x] Rebuild button
 - [ ] Pipeline tag info in digest
-- [ ] Notifications in private chat, not only in channels
-- [ ] Allow bind multiple channels
+- [+] Notifications in private chat, not only in groups
+- [+] Allow bind multiple groups
 - [ ] Admin rights management from UI
 - [x] Digest about each individual pipeline job
 - [ ] Pipelines filtering

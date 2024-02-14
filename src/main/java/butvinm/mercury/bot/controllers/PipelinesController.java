@@ -20,9 +20,10 @@ import com.pengrad.telegrambot.response.SendResponse;
 import butvinm.mercury.bot.gitlab.models.Job;
 import butvinm.mercury.bot.gitlab.models.PipelineEvent;
 import butvinm.mercury.bot.gitlab.models.Status;
-import butvinm.mercury.bot.stores.ChatStore;
+import butvinm.mercury.bot.stores.ChatsStore;
 import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
+import butvinm.mercury.bot.telegram.utils.MessagesUtils;
 import butvinm.mercury.bot.utils.FancyStringBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,10 +37,11 @@ public class PipelinesController {
 
     private final MessagesStore messagesStore;
 
-    private final ChatStore chatStore;
+    private final ChatsStore chatsStore;
 
     @PostMapping("/pipelines")
-    public SendResponse pipelineHandler(@RequestBody PipelineEvent pipeline) {
+    public List<SendResponse> pipelineHandler(
+        @RequestBody PipelineEvent pipeline) {
         List<Job> buildJobs = pipeline.getJobs().stream()
             .filter(j -> j.getStage().equals("build")).toList();
 
@@ -92,7 +94,7 @@ public class PipelinesController {
         return fsb.toString();
     }
 
-    private SendResponse sendPipelineDigest(
+    private List<SendResponse> sendPipelineDigest(
         PipelineEvent pipeline,
         List<Job> buildJobs
     ) throws IOException {
@@ -104,10 +106,10 @@ public class PipelinesController {
         var keyboard = new InlineKeyboardMarkup(
             new InlineKeyboardButton("Rebuild!").callbackData(callback.pack())
         );
-        var request = new SendMessage(chatStore.getTargetChat().get(), digest)
+        var request = new SendMessage(null, digest)
             .parseMode(ParseMode.HTML)
             .replyMarkup(keyboard);
 
-        return bot.execute(request);
+        return MessagesUtils.spread(bot, request, chatsStore.list().keySet());
     }
 }
