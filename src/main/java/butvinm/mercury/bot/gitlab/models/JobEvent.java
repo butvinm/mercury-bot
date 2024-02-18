@@ -51,4 +51,7 @@ public class JobEvent {
 
     @JsonProperty("project")
     private final Project project;
+
+    @JsonProperty("ref")
+    private final String ref;
 }
