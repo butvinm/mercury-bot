@@ -61,6 +61,7 @@ public class JobsController {
     private String createJobDigest(JobEvent job) {
         var fsb = new FancyStringBuilder()
             .l("Job <code>%s</code>", job.getId()).n()
+            .l("<b>Tag</b>: %s", job.getRef())
             .l("<b>State</b>: %s", job.getStatus().getLabel())
             .l("<b>Created by</b>: %s", job.getUser().getName())
             .l("<b>Duration</b>: %s s", job.getDuration());

@@ -75,6 +75,7 @@ public class PipelinesController {
         var attrs = pipeline.getAttributes();
         var fsb = new FancyStringBuilder()
             .l("Pipeline <code>%s</code> finished.", attrs.getId()).n()
+            .l("<b>Tag</b>: %s", attrs.getRef())
             .l("<b>Finished at</b>: %s", attrs.getFinishedAt())
             .l("<b>Duration</b>: %s s", attrs.getDuration())
             .l("<b>Created by</b>: %s", pipeline.getUser().getName());
