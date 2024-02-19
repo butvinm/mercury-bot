@@ -51,15 +51,12 @@ public class PipelinesController {
     @PostMapping("/pipelines")
     public List<SendResponse> pipelineHandler(
         @RequestBody PipelineEvent pipeline) {
-        List<Job> buildJobs = pipeline.getJobs().stream()
-            .filter(j -> j.getStage().equals("build")).toList();
-
-        var buildFinished = buildJobs.stream()
+        var finishedJobs = pipeline.getJobs().stream()
             .allMatch(j -> Status.isFinished(j.getStatus()));
 
-        if (buildFinished) {
+        if (finishedJobs) {
             try {
-                return sendPipelineDigest(pipeline, buildJobs);
+                return sendPipelineDigest(pipeline, pipeline.getJobs());
             } catch (Exception e) {
                 log.error(e.toString());
             }
@@ -121,12 +118,12 @@ public class PipelinesController {
 
     private List<SendResponse> sendPipelineDigest(
         PipelineEvent pipeline,
-        List<Job> buildJobs
+        List<Job> jobs
     ) throws IOException {
-        var digest = createPipelineDigest(pipeline, buildJobs);
+        var digest = createPipelineDigest(pipeline, jobs);
         var callback = new RebuildCallback(
             pipeline.getProject().getId(),
-            buildJobs.stream().map(j -> j.getId()).toList()
+            jobs.stream().map(j -> j.getId()).toList()
         );
         var keyboard = new InlineKeyboardMarkup(
             new InlineKeyboardButton("Rebuild!").callbackData(callback.pack())
