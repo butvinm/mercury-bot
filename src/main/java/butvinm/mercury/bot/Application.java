@@ -19,6 +19,7 @@ import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.BotRouter;
 import butvinm.mercury.bot.telegram.handlers.BindChatHandler;
+import butvinm.mercury.bot.telegram.handlers.FiltersHandler;
 import butvinm.mercury.bot.telegram.handlers.JoinChatHandler;
 import butvinm.mercury.bot.telegram.handlers.LoginHandler;
 import butvinm.mercury.bot.telegram.handlers.RebuildHandler;
@@ -129,6 +130,7 @@ public class Application {
         router.register(new LoginHandler(bot, usersStore));
         router.register(new BindChatHandler(bot, chatsStore, usersStore));
         router.register(new JoinChatHandler(bot, chatsStore));
+        router.register(new FiltersHandler(bot, filtersStore));
 
         bot.setUpdatesListener(router, e -> log.error(e.toString()));
         return router;
