@@ -11,13 +11,13 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 @Builder
 @With
-public class BotUser {
+public class BotChat {
     @JsonProperty("chat_id")
     private final Long chatId;
 
-    @JsonProperty("username")
-    private final String username;
+    @JsonProperty("title")
+    private final String title;
 
-    @JsonProperty("is_admin")
-    private final Boolean admin;
+    @JsonProperty("bind")
+    private final Boolean bind;
 }

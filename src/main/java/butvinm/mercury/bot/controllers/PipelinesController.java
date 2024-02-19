@@ -3,6 +3,7 @@ package butvinm.mercury.bot.controllers;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,6 +23,7 @@ import butvinm.mercury.bot.gitlab.models.PipelineEvent;
 import butvinm.mercury.bot.gitlab.models.Status;
 import butvinm.mercury.bot.stores.ChatsStore;
 import butvinm.mercury.bot.stores.MessagesStore;
+import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
 import butvinm.mercury.bot.telegram.utils.MessagesUtils;
 import butvinm.mercury.bot.utils.FancyStringBuilder;
@@ -38,6 +40,8 @@ public class PipelinesController {
     private final MessagesStore messagesStore;
 
     private final ChatsStore chatsStore;
+
+    private final UsersStore usersStore;
 
     @PostMapping("/pipelines")
     public List<SendResponse> pipelineHandler(
@@ -110,6 +114,11 @@ public class PipelinesController {
             .parseMode(ParseMode.HTML)
             .replyMarkup(keyboard);
 
-        return MessagesUtils.spread(bot, request, chatsStore.list().keySet());
+        var chatsIds = Stream.concat(
+            chatsStore.list().values().stream()
+                .filter(c -> c.getBind()).map(c -> c.getChatId()),
+            usersStore.list().keySet().stream()
+        );
+        return MessagesUtils.spread(bot, request, chatsIds.toList());
     }
 }
