@@ -50,7 +50,9 @@ public class PipelinesController {
 
     @PostMapping("/pipelines")
     public List<SendResponse> pipelineHandler(
-        @RequestBody PipelineEvent pipeline) {
+        @RequestBody PipelineEvent pipeline
+    ) {
+        log.info(pipeline.toString());
         var finishedJobs = pipeline.getJobs().stream()
             .allMatch(j -> Status.isFinished(j.getStatus()));
 
