@@ -1,6 +1,7 @@
 package butvinm.mercury.bot.controllers;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -21,11 +22,13 @@ import com.pengrad.telegrambot.response.SendResponse;
 import butvinm.mercury.bot.gitlab.models.JobEvent;
 import butvinm.mercury.bot.gitlab.models.Status;
 import butvinm.mercury.bot.stores.ChatsStore;
+import butvinm.mercury.bot.stores.FiltersStore;
 import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
 import butvinm.mercury.bot.telegram.utils.MessagesUtils;
 import butvinm.mercury.bot.utils.FancyStringBuilder;
+import butvinm.mercury.bot.utils.filter.ObjectFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +44,8 @@ public class JobsController {
     private final ChatsStore chatsStore;
 
     private final UsersStore usersStore;
+
+    private final FiltersStore filtersStore;
 
     @PostMapping("/jobs")
     public List<SendResponse> jobHandler(@RequestBody JobEvent job) {
@@ -86,6 +91,18 @@ public class JobsController {
         return fsb.toString();
     }
 
+    private Boolean filterJob(
+        String chatId,
+        JobEvent job
+    ) throws IOException {
+        var patterns = filtersStore.get(chatId);
+        if (patterns.isEmpty()) {
+            return true;
+        }
+        var filter = new ObjectFilter(patterns.get().getJobsFilters());
+        return filter.test(job);
+    }
+
     private List<SendResponse> sendJobDigest(JobEvent job) throws IOException {
         var digest = createJobDigest(job);
         var callback = new RebuildCallback(
@@ -99,11 +116,29 @@ public class JobsController {
             .parseMode(ParseMode.HTML)
             .replyMarkup(keyboard);
 
-        var chatsIds = Stream.concat(
-            chatsStore.list().values().stream()
-                .filter(c -> c.getBind()).map(c -> c.getChatId()),
-            usersStore.list().keySet().stream()
+        var chats = chatsStore.list();
+        for (var chat : chats.values()) {
+            log.debug(chat.toString());
+        }
+
+        var chatsIds = chatsStore.list().values().stream()
+            .filter(c -> c.getBind())
+            .map(c -> c.getChatId());
+
+        var usersIds = usersStore.list().values().stream()
+            .filter(u -> {
+                try {
+                    return filterJob(u.getChatId().toString(), job);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            })
+            .map(u -> u.getChatId());
+
+        return MessagesUtils.spread(
+            bot,
+            request,
+            Stream.concat(chatsIds, usersIds).toList()
         );
-        return MessagesUtils.spread(bot, request, chatsIds.toList());
     }
 }
