@@ -40,7 +40,7 @@ public class BindChatHandler implements Handler {
 
     private SendResponse bindChat(
         Message message,
-        ChatShared chat
+        ChatShared sharedChat
     ) throws IOException {
         var user = usersStore.get(message.from().id().toString());
         if (user.isEmpty() || !user.get().getAdmin()) {
@@ -51,7 +51,19 @@ public class BindChatHandler implements Handler {
             return bot.execute(request);
         }
 
-        chatsStore.put(chat.chatId().toString(), chat.chatId());
+        var chat = chatsStore.get(sharedChat.chatId().toString());
+        if (chat.isEmpty()) {
+            var request = new SendMessage(
+                message.chat().id(),
+                "You need to add bot to chat members first."
+            );
+            return bot.execute(request);
+        }
+
+        chatsStore.put(
+            sharedChat.chatId().toString(),
+            chat.get().withBind(true)
+        );
 
         var request = new SendMessage(message.chat().id(), "Chat was bind");
         return bot.execute(request);

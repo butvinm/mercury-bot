@@ -17,10 +17,12 @@ import butvinm.mercury.bot.stores.ChatsStore;
 import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.BotRouter;
-import butvinm.mercury.bot.telegram.handlers.AnyMessageHandler;
 import butvinm.mercury.bot.telegram.handlers.BindChatHandler;
+import butvinm.mercury.bot.telegram.handlers.JoinChatHandler;
+import butvinm.mercury.bot.telegram.handlers.LoginHandler;
 import butvinm.mercury.bot.telegram.handlers.RebuildHandler;
 import butvinm.mercury.bot.telegram.handlers.StartHandler;
+import butvinm.mercury.bot.telegram.models.BotChat;
 import butvinm.mercury.bot.telegram.models.BotUser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +76,7 @@ public class Application {
 
         this.chatsStore = new ChatsStore(
             shareDir.resolve(chatDb).toFile(),
-            Long.class
+            BotChat.class
         );
 
         this.router = initBotRouter(
@@ -118,9 +120,10 @@ public class Application {
             usersStore,
             chatsStore
         ));
-        router.register(new StartHandler(bot, chatsStore));
-        router.register(new AnyMessageHandler(usersStore));
+        router.register(new StartHandler(bot));
+        router.register(new LoginHandler(bot, usersStore));
         router.register(new BindChatHandler(bot, chatsStore, usersStore));
+        router.register(new JoinChatHandler(bot, chatsStore));
 
         bot.setUpdatesListener(router, e -> log.error(e.toString()));
         return router;
