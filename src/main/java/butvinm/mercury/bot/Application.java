@@ -14,16 +14,16 @@ import com.pengrad.telegrambot.TelegramBot;
 import butvinm.mercury.bot.exceptions.ShareDirMissedException;
 import butvinm.mercury.bot.gitlab.GLClient;
 import butvinm.mercury.bot.stores.ChatsStore;
+import butvinm.mercury.bot.stores.FiltersStore;
 import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.BotRouter;
 import butvinm.mercury.bot.telegram.handlers.BindChatHandler;
+import butvinm.mercury.bot.telegram.handlers.FiltersHandler;
 import butvinm.mercury.bot.telegram.handlers.JoinChatHandler;
 import butvinm.mercury.bot.telegram.handlers.LoginHandler;
 import butvinm.mercury.bot.telegram.handlers.RebuildHandler;
 import butvinm.mercury.bot.telegram.handlers.StartHandler;
-import butvinm.mercury.bot.telegram.models.BotChat;
-import butvinm.mercury.bot.telegram.models.BotUser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,10 +50,14 @@ public class Application {
     @Getter(onMethod = @__({ @Bean }))
     private final ChatsStore chatsStore;
 
+    @Getter(onMethod = @__({ @Bean }))
+    private final FiltersStore filtersStore;
+
     public Application(
         @Value("${share}") Path shareDir,
         @Value("${users.db}") Path usersDb,
-        @Value("${chats.db}") Path chatDb,
+        @Value("${chats.db}") Path chatsDb,
+        @Value("${filters.db}") Path filtersDb,
         @Value("${gitlab.host}") String glHost,
         @Value("${gitlab.access.token}") String glAccessToken,
         @Value("${bot.token}") String botToken
@@ -70,13 +74,15 @@ public class Application {
         this.messagesStore = new MessagesStore();
 
         this.usersStore = new UsersStore(
-            shareDir.resolve(usersDb).toFile(),
-            BotUser.class
+            shareDir.resolve(usersDb).toFile()
         );
 
         this.chatsStore = new ChatsStore(
-            shareDir.resolve(chatDb).toFile(),
-            BotChat.class
+            shareDir.resolve(chatsDb).toFile()
+        );
+
+        this.filtersStore = new FiltersStore(
+            shareDir.resolve(filtersDb).toFile()
         );
 
         this.router = initBotRouter(
@@ -124,6 +130,7 @@ public class Application {
         router.register(new LoginHandler(bot, usersStore));
         router.register(new BindChatHandler(bot, chatsStore, usersStore));
         router.register(new JoinChatHandler(bot, chatsStore));
+        router.register(new FiltersHandler(bot, filtersStore));
 
         bot.setUpdatesListener(router, e -> log.error(e.toString()));
         return router;

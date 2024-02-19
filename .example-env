@@ -4,3 +4,4 @@ GITLAB_ACCESS_TOKEN=
 SHARE=/share
 USERS_DB=users.db
 CHATS_DB=chats.db
+FILTERS_DB=filters.db

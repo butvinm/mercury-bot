@@ -42,7 +42,8 @@ java -jar app.jar \
     --gitlab.host=https://gitlab.com \
     --gitlab.access.token=GitLab PAT \
     --users.db=users.db \
-    --chats.db=chats.db
+    --chats.db=chats.db \
+    --filters.db=filters.db
 ```
 
 ### ~~For zoomers~~ In Docker
@@ -55,6 +56,7 @@ GITLAB_ACCESS_TOKEN=GitLab PAT
 SHARE=/share
 USERS_DB=users.db
 CHATS_DB=chats.db
+FILTERS_DB=filters.db
 ```
 
 2. Build the Docker image:
@@ -69,31 +71,167 @@ scripts/run.sh
 
 ## Management and configuration
 
-### Bind group or group
+### Authorization
 
-To bind bot to the group:
-- Add bot to the group members
-- Go to private chat with bot and type `/start`
-- Bot would send your **Bind** button. Click it and selet target channke. In case of success bot would reply "Chat was bind".
+Auth system is very strange, because it was designed to reduce amount of work for my lazy ass.
 
-### Rebuild button and admin rights
+**Common user**: Enter `/login <part of bot token before ":">`
 
-Only bot admins can use "Rebuild" button. To grant admin right to user go to file, specified as `users.db` - it is actually json, that you can easily modify:
+**Adming**: Enter `/login <whole bot token>`
+
+### Filters
+
+Mercury Bot has pretty powerful events filtering system.
+
+You can manage filters with following commands:
+- `/add_job_filter {path}={regex}`
+- `/del_job_filter {path}`
+- `/clear_job_filters`
+- `/add_pipeline_filter {path}={regex}`
+- `/del_pipeline_filter {path}`
+- `/clear_pipeline_filters`
+- `/show_filters`
+- `/help_filters`
+
+What is {path} and {regex}?
+
+Regex is just regular expression that would be used to validate field value (its string representation, actually).
+
+Path is a bit more complecated. It is string in JsonPointer format directly inherited from Jackson library. If you want to get name of job author, path would be: `/user/name`. You can refer to [RFC](https://datatracker.ietf.org/doc/html/rfc6901) for more details.
+
+**Job fields available for filtering:**
 ```json
 {
-    "5609708885": {
-        "id": 5609708885,
+  "createdAt": "2024-02-12T02:11:07Z",
+  "duration": 0.08851946,
+  "failureReason": "unknown_failure",
+  "finishedAt": null,
+  "id": 6147367853,
+  "name": "build-job2",
+  "queuedDuration": 0.3411436,
+  "stage": "build",
+  "startedAt": "2024-02-12T02:11:09Z",
+  "status": "RUNNING",
+  "pipeline_id": 1172795709,
+  "objectKind": "build",
+  "ref": "main",
+  "user": {
+    "id": 16837135,
+    "name": "Mihail Butvin",
+    "username": "butvinm",
+    "avatarUrl": "https://secure.gravatar.com/avatar/77398f38bf23d7ea429b49162d49252a?s=80&d=identicon",
+    "email": "[REDACTED]"
+  },
+  "project": {
+    "id": 53607146,
+    "name": "Mercury Test",
+    "description": null,
+    "webUrl": "https://gitlab.com/butvinm/mercury-test",
+    "avatarUrl": null,
+    "gitSshUrl": "git@gitlab.com:butvinm/mercury-test.git",
+    "gitHttpUrl": "https://gitlab.com/butvinm/mercury-test.git",
+    "namespace": "Mihail Butvin",
+    "pathWithNamespace": "butvinm/mercury-test",
+    "defaultBranch": "main",
+    "homepage": null,
+    "url": null,
+    "sshUrl": null,
+    "httpUrl": null
+  }
+}
+
+```
+
+**Pipeline fields available for filtering:**
+```json
+{
+    "object_kind": "pipeline",
+    "object_attributes": {
+        "id": 1097064499,
+        "iid": 4,
+        "name": null,
+        "ref": "test2",
+        "source": "merge_request_event",
+        "status": "running",
+        "stages": [
+            "test"
+        ],
+        "created_at": "2023-12-06 09:10:09 UTC",
+        "finished_at": null,
+        "duration": null,
+    },
+    "merge_request": {
+        "id": 268297921,
+        "iid": 2,
+        "title": "Update file README.md",
+        "source_branch": "test2",
+        "source_project_id": 50273425,
+        "target_branch": "main",
+        "target_project_id": 50273425,
+        "state": "opened",
+        "merge_status": "checking"
+    },
+    "user": {
+        "id": 16837135,
+        "name": "Mihail Butvin",
         "username": "butvinm",
-        "is_admin": true  // variable, you should modify
-    }
+        "avatar_url": "https://secure.gravatar.com/avatar/77398f38bf23d7ea429b49162d49252a?s=80&d=identicon",
+        "email": "[REDACTED]"
+    },
+    "project": {
+        "id": 50273425,
+        "name": "test",
+        "description": null,
+        "web_url": "https://gitlab.com/test6425537/test",
+        "avatar_url": null,
+        "git_ssh_url": "git@gitlab.com:test6425537/test.git",
+        "git_http_url": "https://gitlab.com/test6425537/test.git",
+        "namespace": "test",
+        "path_with_namespace": "test6425537/test",
+        "default_branch": "main",
+    },
+    "builds": [
+        {
+            "id": 5690969305,
+            "stage": "build",
+            "name": "job1",
+            "status": "running",
+            "created_at": "2023-12-06 09:10:09 UTC",
+            "started_at": "2023-12-06 09:10:10 UTC",
+            "finished_at": null,
+            "duration": 0.466666359,
+            "queued_duration": 0.160732,
+            "failure_reason": null,
+            "when": "on_success",
+            "manual": false,
+            "allow_failure": false,
+            "user": {
+                "id": 16837135,
+                "name": "Mihail Butvin",
+                "username": "butvinm",
+                "avatar_url": "https://secure.gravatar.com/avatar/77398f38bf23d7ea429b49162d49252a?s=80&d=identicon",
+                "email": "[REDACTED]"
+            }
+        }
+    ]
 }
 ```
 
-> Users are added to the users.db only after some message to the target chat.
+### Groups bindings (admins)
+
+To bind bot to the group:
+- Add bot to the group members
+- Bot should have send you **Bind** button after `/login` command. Click it and select target group. In case of success bot would reply "Chat was bind".
+
+Unbinding is not implemented yet, because our data storage does not support deleting.
+
+### Rebuild button (admins)
+
+Each pipeline/job event has **Rebuild** button. For individual jobs it would rebuild only that job and for pipelines - all related jobs.
 
 ### Custom messages
 
-You can push additional information to the bot during pipeline. We have `scripts/pipeline_message.sh` and `scripts/job_message.sh` scripts those you can trigger to send message that would be added to bot digests.
+You can push additional information to the bot from GitLab CI. We have `scripts/pipeline_message.sh` and `scripts/job_message.sh` scripts those you can trigger to send message that would be added to bot digests.
 
 ```yaml
 variables:
@@ -112,9 +250,9 @@ buildServer:
 
 - [x] Pipeline job's digest
 - [x] Rebuild button
-- [ ] Pipeline tag info in digest
+- [x] Pipeline tag info in digest
 - [x] Notifications in private chat, not only in groups
 - [x] Allow bind multiple groups
-- [ ] Admin rights management from UI
+- [x] Admin rights management from UI
 - [x] Digest about each individual pipeline job
-- [ ] Pipelines filtering
+- [x] Pipelines filtering
