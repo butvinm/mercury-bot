@@ -41,9 +41,13 @@ java -jar app.jar \
     --bot.token=Token from BotFather \
     --gitlab.host=https://gitlab.com \
     --gitlab.access.token=GitLab PAT \
-    --users.db=users.db \
-    --chats.db=chats.db \
-    --filters.db=filters.db
+```
+
+Optional settings:
+```
+--users.db=users.db \
+--chats.db=chats.db \
+--filters.db=filters.db
 ```
 
 ### ~~For zoomers~~ In Docker
@@ -54,6 +58,10 @@ BOT_TOKEN=Token from BotFather
 GITLAB_HOST=https://gitlab.com
 GITLAB_ACCESS_TOKEN=GitLab PAT
 SHARE=/share
+```
+
+Optional settings:
+```
 USERS_DB=users.db
 CHATS_DB=chats.db
 FILTERS_DB=filters.db
