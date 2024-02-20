@@ -55,9 +55,9 @@ public class Application {
 
     public Application(
         @Value("${share}") Path shareDir,
-        @Value("${users.db}") Path usersDb,
-        @Value("${chats.db}") Path chatsDb,
-        @Value("${filters.db}") Path filtersDb,
+        @Value("${users.db:users.db}") Path usersDb,
+        @Value("${chats.db:chats.db}") Path chatsDb,
+        @Value("${filters.db:filters.db}") Path filtersDb,
         @Value("${gitlab.host}") String glHost,
         @Value("${gitlab.access.token}") String glAccessToken,
         @Value("${bot.token}") String botToken
