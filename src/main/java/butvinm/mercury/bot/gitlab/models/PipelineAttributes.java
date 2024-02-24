@@ -12,6 +12,9 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 @Builder
 public class PipelineAttributes {
+    @JsonProperty("before_sha")
+    private final String beforeSha;
+
     @JsonProperty("id")
     private final Long id;
 
@@ -20,6 +23,9 @@ public class PipelineAttributes {
 
     @JsonProperty("name")
     private final String name;
+
+    @JsonProperty("tag")
+    private final Boolean tag;
 
     @JsonProperty("ref")
     private final String ref;
@@ -41,4 +47,10 @@ public class PipelineAttributes {
 
     @JsonProperty("duration")
     private final Float duration;
+
+    @JsonProperty("variables")
+    private final List<Variable> variables;
+
+    @JsonProperty("url")
+    private final String url;
 }

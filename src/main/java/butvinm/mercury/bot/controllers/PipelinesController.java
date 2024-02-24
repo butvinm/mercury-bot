@@ -53,12 +53,12 @@ public class PipelinesController {
         @RequestBody PipelineEvent pipeline
     ) {
         log.info(pipeline.toString());
-        var finishedJobs = pipeline.getJobs().stream()
+        var finishedJobs = pipeline.getBuilds().stream()
             .allMatch(j -> Status.isFinished(j.getStatus()));
 
         if (finishedJobs) {
             try {
-                return sendPipelineDigest(pipeline, pipeline.getJobs());
+                return sendPipelineDigest(pipeline, pipeline.getBuilds());
             } catch (Exception e) {
                 log.error(e.toString());
             }

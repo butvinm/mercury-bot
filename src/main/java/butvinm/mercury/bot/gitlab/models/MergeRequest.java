@@ -36,4 +36,10 @@ public class MergeRequest {
 
     @JsonProperty("status")
     private final MergeRequestStatus status;
+
+    @JsonProperty("detailed_status")
+    private final MergeRequestStatus detailedStatus;
+
+    @JsonProperty("url")
+    private final String url;
 }

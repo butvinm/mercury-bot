@@ -31,5 +31,8 @@ public class PipelineEvent {
     private final MergeRequest mergeRequest;
 
     @JsonProperty("builds")
-    private final List<Job> jobs;
+    private final List<Job> builds;
+
+    @JsonProperty("source_pipeline")
+    private final Pipeline sourcePipeline;
 }
