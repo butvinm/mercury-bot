@@ -68,8 +68,13 @@ public class JobsController {
 
     // TODO: add link to the pipeline
     private String createJobDigest(JobEvent job) {
+        var url = "%s/-/jobs/%s".formatted(
+            job.getProject().getWebUrl(),
+            job.getId()
+        );
         var fsb = new FancyStringBuilder()
-            .l("Job <code>%s</code>", job.getId()).n()
+            .l("Job <a href=\"%s\">%s</a>", url, job.getId())
+            .n()
             .l("<b>Tag</b>: %s", job.getRef())
             .l("<b>State</b>: %s", job.getStatus().getLabel())
             .l("<b>Created by</b>: %s", job.getUser().getName())
@@ -107,7 +112,7 @@ public class JobsController {
         var digest = createJobDigest(job);
         var callback = new RebuildCallback(
             job.getProject().getId(),
-            List.of(job.getId())
+            List.of(job.getId().toString())
         );
         var keyboard = new InlineKeyboardMarkup(
             new InlineKeyboardButton("Rebuild!").callbackData(callback.pack())

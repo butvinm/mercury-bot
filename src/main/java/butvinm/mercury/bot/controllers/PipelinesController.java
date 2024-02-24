@@ -81,8 +81,13 @@ public class PipelinesController {
         List<Job> buildJobs
     ) {
         var attrs = pipeline.getAttributes();
+        var url = "%s/-/pipelines/%s".formatted(
+            pipeline.getProject().getWebUrl(),
+            attrs.getId()
+        );
         var fsb = new FancyStringBuilder()
-            .l("Pipeline <code>%s</code> finished.", attrs.getId()).n()
+            .l("Pipeline <a href=\"%s\">%s</a> finished.", url, attrs.getId())
+            .n()
             .l("<b>Tag</b>: %s", attrs.getRef())
             .l("<b>Finished at</b>: %s", attrs.getFinishedAt())
             .l("<b>Duration</b>: %s s", attrs.getDuration())
@@ -125,7 +130,7 @@ public class PipelinesController {
         var digest = createPipelineDigest(pipeline, jobs);
         var callback = new RebuildCallback(
             pipeline.getProject().getId(),
-            jobs.stream().map(j -> j.getId()).toList()
+            jobs.stream().map(j -> j.getId().toString()).toList()
         );
         var keyboard = new InlineKeyboardMarkup(
             new InlineKeyboardButton("Rebuild!").callbackData(callback.pack())

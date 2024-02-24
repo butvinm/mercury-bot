@@ -1,7 +1,6 @@
 package butvinm.mercury.bot.telegram.handlers;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 
 import com.pengrad.telegrambot.TelegramBot;
@@ -16,10 +15,10 @@ import butvinm.mercury.bot.stores.ChatsStore;
 import butvinm.mercury.bot.stores.MessagesStore;
 import butvinm.mercury.bot.stores.UsersStore;
 import butvinm.mercury.bot.telegram.callbacks.RebuildCallback;
-import butvinm.mercury.bot.telegram.utils.MessagesUtils;
 import butvinm.mercury.bot.utils.FancyStringBuilder;
 import kong.unirest.UnirestException;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Handle rebuild pipeline button.
@@ -27,6 +26,7 @@ import lombok.Data;
  * Restart all pipeline jobs and send status.
  */
 @Data
+@Slf4j
 public class RebuildHandler implements Handler {
     private final TelegramBot bot;
 
@@ -57,7 +57,7 @@ public class RebuildHandler implements Handler {
         ));
     }
 
-    private List<SendResponse> handleRebuildCallback(
+    private SendResponse handleRebuildCallback(
         CallbackQuery query,
         RebuildCallback callback
     ) throws IOException {
@@ -66,10 +66,10 @@ public class RebuildHandler implements Handler {
         if (user.isPresent() && user.get().getAdmin()) {
             return retryBuildJobs(query, callback);
         }
-        return List.of(sendPermissionsAlert(query));
+        return sendPermissionsAlert(query);
     }
 
-    private List<SendResponse> retryBuildJobs(
+    private SendResponse retryBuildJobs(
         CallbackQuery query,
         RebuildCallback callback
     ) throws IOException {
@@ -79,8 +79,10 @@ public class RebuildHandler implements Handler {
             try {
                 var response = glClient.retryJob(
                     callback.getProjectId(),
-                    jobId
+                    Long.valueOf(jobId)
                 );
+                log.info(jobId);
+                log.info(response.getBody().toPrettyString());
                 fsb.l(
                     "<b>%s:</b> %s",
                     jobId,
@@ -96,11 +98,11 @@ public class RebuildHandler implements Handler {
             }
         }
         var request = new SendMessage(
-            null,
+            query.message().chat().id(),
             fsb.toString()
         ).parseMode(ParseMode.HTML);
 
-        return MessagesUtils.spread(bot, request, chatsStore.list().keySet());
+        return bot.execute(request);
     }
 
     private SendResponse sendPermissionsAlert(
