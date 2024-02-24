@@ -51,4 +51,19 @@ public class Job {
 
     @JsonProperty("user")
     private final User user;
+
+    @JsonProperty("environment")
+    private final String environment;
+
+    @JsonProperty("environment_tier")
+    private final String environmentTier;
+
+    @JsonProperty("environment_slug")
+    private final String environmentSlug;
+
+    @JsonProperty("artifacts_file")
+    private final ArtifactsFile artifactsFile;
+
+    @JsonProperty("runner")
+    private final Runner runner;
 }
