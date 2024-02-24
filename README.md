@@ -110,44 +110,91 @@ Path is a bit more complecated. It is string in JsonPointer format directly inhe
 **Job fields available for filtering:**
 ```json
 {
-  "createdAt": "2024-02-12T02:11:07Z",
-  "duration": 0.08851946,
-  "failureReason": "unknown_failure",
-  "finishedAt": null,
-  "id": 6147367853,
-  "name": "build-job2",
-  "queuedDuration": 0.3411436,
-  "stage": "build",
-  "startedAt": "2024-02-12T02:11:09Z",
-  "status": "RUNNING",
-  "pipeline_id": 1172795709,
-  "objectKind": "build",
-  "ref": "main",
-  "user": {
-    "id": 16837135,
-    "name": "Mihail Butvin",
-    "username": "butvinm",
-    "avatarUrl": "https://secure.gravatar.com/avatar/77398f38bf23d7ea429b49162d49252a?s=80&d=identicon",
-    "email": "[REDACTED]"
-  },
-  "project": {
-    "id": 53607146,
-    "name": "Mercury Test",
-    "description": null,
-    "webUrl": "https://gitlab.com/butvinm/mercury-test",
-    "avatarUrl": null,
-    "gitSshUrl": "git@gitlab.com:butvinm/mercury-test.git",
-    "gitHttpUrl": "https://gitlab.com/butvinm/mercury-test.git",
-    "namespace": "Mihail Butvin",
-    "pathWithNamespace": "butvinm/mercury-test",
-    "defaultBranch": "main",
-    "homepage": null,
-    "url": null,
-    "sshUrl": null,
-    "httpUrl": null
-  }
+    "before_sha": "3a0e6e6d0ca8f34e4a2ef8efdb761a2cadea6ea1",
+    "build_allow_failure": false,
+    "build_created_at": "2024-02-12 02:11:07 UTC",
+    "build_duration": 0.088519463,
+    "build_failure_reason": "unknown_failure",
+    "build_finished_at": null,
+    "build_id": 6147367853,
+    "build_name": "build-job2",
+    "build_queued_duration": 0.341143608,
+    "build_stage": "build",
+    "build_started_at": "2024-02-12 02:11:09 UTC",
+    "build_status": "running",
+    "commit": {
+        "author_email": "butvin.mihail@yandex.ru",
+        "author_name": "Mihail Butvin",
+        "author_url": "https://gitlab.com/butvinm",
+        "duration": null,
+        "finished_at": null,
+        "id": 1172795709,
+        "message": "Update .gitlab-ci.yml file",
+        "name": null,
+        "sha": "8847c996b0166b7e0a8b9ed794de2185ec0e7348",
+        "started_at": "2024-02-12 02:11:09 UTC",
+        "status": "running"
+    },
+    "environment": null,
+    "object_kind": "build",
+    "pipeline_id": 1172795709,
+    "project": {
+        "avatar_url": null,
+        "ci_config_path": "",
+        "default_branch": "main",
+        "description": null,
+        "git_http_url": "https://gitlab.com/butvinm/mercury-test.git",
+        "git_ssh_url": "git@gitlab.com:butvinm/mercury-test.git",
+        "id": 53607146,
+        "name": "Mercury Test",
+        "namespace": "Mihail Butvin",
+        "path_with_namespace": "butvinm/mercury-test",
+        "visibility_level": 0,
+        "web_url": "https://gitlab.com/butvinm/mercury-test"
+    },
+    "project_id": 53607146,
+    "project_name": "Mihail Butvin / Mercury Test",
+    "ref": "main",
+    "repository": {
+        "description": null,
+        "git_http_url": "https://gitlab.com/butvinm/mercury-test.git",
+        "git_ssh_url": "git@gitlab.com:butvinm/mercury-test.git",
+        "homepage": "https://gitlab.com/butvinm/mercury-test",
+        "name": "Mercury Test",
+        "url": "git@gitlab.com:butvinm/mercury-test.git",
+        "visibility_level": 0
+    },
+    "retries_count": 0,
+    "runner": {
+        "active": true,
+        "description": "2-blue.saas-linux-small-amd64.runners-manager.gitlab.com/default",
+        "id": 12270831,
+        "is_shared": true,
+        "runner_type": "instance_type",
+        "tags": [
+            "gce",
+            "east-c",
+            "linux",
+            "ruby",
+            "mysql",
+            "postgres",
+            "mongo",
+            "git-annex",
+            "shared",
+            "docker",
+            "saas-linux-small-amd64"
+        ]
+    },
+    "sha": "8847c996b0166b7e0a8b9ed794de2185ec0e7348",
+    "tag": false,
+    "user": {
+        "avatar_url": "https://secure.gravatar.com/avatar/77398f38bf23d7ea429b49162d49252a?s=80&d=identicon",
+        "email": "[REDACTED]",
+        "id": 16837135,
+        "name": "Mihail Butvin",
+        "username": "butvinm"
+    }
 }
-
 ```
 
 **Pipeline fields available for filtering:**
@@ -155,71 +202,121 @@ Path is a bit more complecated. It is string in JsonPointer format directly inhe
 {
     "object_kind": "pipeline",
     "object_attributes": {
-        "id": 1097064499,
-        "iid": 4,
-        "name": null,
-        "ref": "test2",
+        "id": 31,
+        "iid": 3,
+        "name": "Pipeline for branch: master",
+        "ref": "master",
+        "tag": false,
+        "sha": "bcbb5ec396a2c0f828686f14fac9b80b780504f2",
+        "before_sha": "bcbb5ec396a2c0f828686f14fac9b80b780504f2",
         "source": "merge_request_event",
-        "status": "running",
+        "status": "success",
         "stages": [
-            "test"
+            "build",
+            "test",
+            "deploy"
         ],
-        "created_at": "2023-12-06 09:10:09 UTC",
-        "finished_at": null,
-        "duration": null,
+        "created_at": "2016-08-12 15:23:28 UTC",
+        "finished_at": "2016-08-12 15:26:29 UTC",
+        "duration": 63,
+        "variables": [
+            {
+                "key": "NESTOR_PROD_ENVIRONMENT",
+                "value": "us-west-1"
+            }
+        ],
+        "url": "http://example.com/gitlab-org/gitlab-test/-/pipelines/31"
     },
     "merge_request": {
-        "id": 268297921,
-        "iid": 2,
-        "title": "Update file README.md",
-        "source_branch": "test2",
-        "source_project_id": 50273425,
-        "target_branch": "main",
-        "target_project_id": 50273425,
+        "id": 1,
+        "iid": 1,
+        "title": "Test",
+        "source_branch": "test",
+        "source_project_id": 1,
+        "target_branch": "master",
+        "target_project_id": 1,
         "state": "opened",
-        "merge_status": "checking"
+        "merge_status": "can_be_merged",
+        "detailed_merge_status": "mergeable",
+        "url": "http://192.168.64.1:3005/gitlab-org/gitlab-test/merge_requests/1"
     },
     "user": {
-        "id": 16837135,
-        "name": "Mihail Butvin",
-        "username": "butvinm",
-        "avatar_url": "https://secure.gravatar.com/avatar/77398f38bf23d7ea429b49162d49252a?s=80&d=identicon",
-        "email": "[REDACTED]"
+        "id": 1,
+        "name": "Administrator",
+        "username": "root",
+        "avatar_url": "http://www.gravatar.com/avatar/e32bd13e2add097461cb96824b7a829c?s=80\u0026d=identicon",
+        "email": "user_email@gitlab.com"
     },
     "project": {
-        "id": 50273425,
-        "name": "test",
-        "description": null,
-        "web_url": "https://gitlab.com/test6425537/test",
+        "id": 1,
+        "name": "Gitlab Test",
+        "description": "Atque in sunt eos similique dolores voluptatem.",
+        "web_url": "http://192.168.64.1:3005/gitlab-org/gitlab-test",
         "avatar_url": null,
-        "git_ssh_url": "git@gitlab.com:test6425537/test.git",
-        "git_http_url": "https://gitlab.com/test6425537/test.git",
-        "namespace": "test",
-        "path_with_namespace": "test6425537/test",
-        "default_branch": "main",
+        "git_ssh_url": "git@192.168.64.1:gitlab-org/gitlab-test.git",
+        "git_http_url": "http://192.168.64.1:3005/gitlab-org/gitlab-test.git",
+        "namespace": "Gitlab Org",
+        "visibility_level": 20,
+        "path_with_namespace": "gitlab-org/gitlab-test",
+        "default_branch": "master"
+    },
+    "commit": {
+        "id": "bcbb5ec396a2c0f828686f14fac9b80b780504f2",
+        "message": "test\n",
+        "timestamp": "2016-08-12T17:23:21+02:00",
+        "url": "http://example.com/gitlab-org/gitlab-test/commit/bcbb5ec396a2c0f828686f14fac9b80b780504f2",
+        "author": {
+            "name": "User",
+            "email": "user@gitlab.com"
+        }
+    },
+    "source_pipeline": {
+        "project": {
+            "id": 41,
+            "web_url": "https://gitlab.example.com/gitlab-org/upstream-project",
+            "path_with_namespace": "gitlab-org/upstream-project"
+        },
+        "pipeline_id": 30,
+        "job_id": 3401
     },
     "builds": [
         {
-            "id": 5690969305,
+            "id": 376,
             "stage": "build",
-            "name": "job1",
-            "status": "running",
-            "created_at": "2023-12-06 09:10:09 UTC",
-            "started_at": "2023-12-06 09:10:10 UTC",
-            "finished_at": null,
-            "duration": 0.466666359,
-            "queued_duration": 0.160732,
+            "name": "build-image",
+            "status": "success",
+            "created_at": "2016-08-12 15:23:28 UTC",
+            "started_at": "2016-08-12 15:24:56 UTC",
+            "finished_at": "2016-08-12 15:25:26 UTC",
+            "duration": 17.0,
+            "queued_duration": 196.0,
             "failure_reason": null,
             "when": "on_success",
             "manual": false,
             "allow_failure": false,
             "user": {
-                "id": 16837135,
-                "name": "Mihail Butvin",
-                "username": "butvinm",
-                "avatar_url": "https://secure.gravatar.com/avatar/77398f38bf23d7ea429b49162d49252a?s=80&d=identicon",
-                "email": "[REDACTED]"
-            }
+                "id": 1,
+                "name": "Administrator",
+                "username": "root",
+                "avatar_url": "http://www.gravatar.com/avatar/e32bd13e2add097461cb96824b7a829c?s=80\u0026d=identicon",
+                "email": "admin@example.com"
+            },
+            "runner": {
+                "id": 380987,
+                "description": "shared-runners-manager-6.gitlab.com",
+                "active": true,
+                "runner_type": "instance_type",
+                "is_shared": true,
+                "tags": [
+                    "linux",
+                    "docker"
+                ]
+            },
+            "artifacts_file": {
+                "filename": null,
+                "size": null
+            },
+            "environment": null
         }
     ]
 }
